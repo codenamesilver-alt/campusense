@@ -1,0 +1,69 @@
+{
+  "name": "AdmissionEnquiry",
+  "type": "object",
+  "properties": {
+    "student_name": {
+      "type": "string",
+      "description": "Name of the prospective student"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "email": {
+      "type": "string",
+      "description": "Contact email address"
+    },
+    "enquiry_for_class": {
+      "type": "string",
+      "description": "Class for which enquiry is made"
+    },
+    "date_of_enquiry": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when enquiry was made"
+    },
+    "current_school": {
+      "type": "string",
+      "description": "Current school of the student"
+    },
+    "description": {
+      "type": "string",
+      "description": "Additional details about the enquiry"
+    },
+    "next_followup_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date for next follow-up"
+    },
+    "assigned_to_staff": {
+      "type": "string",
+      "description": "Staff member assigned to handle this enquiry"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "contacted",
+        "visit_scheduled",
+        "admitted",
+        "closed"
+      ],
+      "default": "pending",
+      "description": "Current status of the enquiry"
+    }
+  },
+  "required": [
+    "student_name",
+    "phone",
+    "enquiry_for_class",
+    "date_of_enquiry"
+  ],
+  "rls": {
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

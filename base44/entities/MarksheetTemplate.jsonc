@@ -1,0 +1,43 @@
+{
+  "name": "MarksheetTemplate",
+  "type": "object",
+  "properties": {
+    "template_name": {
+      "type": "string"
+    },
+    "template_type": {
+      "type": "string",
+      "enum": [
+        "Standard",
+        "CBSE-Pattern",
+        "Detailed"
+      ],
+      "default": "Standard"
+    },
+    "show_rank": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_division": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_attendance": {
+      "type": "boolean",
+      "default": false
+    },
+    "school_logo_url": {
+      "type": "string"
+    },
+    "principal_signature_url": {
+      "type": "string"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "template_name"
+  ]
+}

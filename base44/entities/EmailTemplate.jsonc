@@ -1,0 +1,23 @@
+{
+  "name": "EmailTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Internal name for the template"
+    },
+    "subject": {
+      "type": "string",
+      "description": "The subject line of the email"
+    },
+    "body": {
+      "type": "string",
+      "description": "HTML content for the email body. Use placeholders like {{student_name}}."
+    }
+  },
+  "required": [
+    "name",
+    "subject",
+    "body"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "StudentAttendanceInsight",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student's ID"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Student's full name"
+    },
+    "class": {
+      "type": "string",
+      "description": "Student's class"
+    },
+    "section": {
+      "type": "string",
+      "description": "Student's section"
+    },
+    "total_days_counted": {
+      "type": "number",
+      "description": "Total attendance days counted"
+    },
+    "total_days_present": {
+      "type": "number",
+      "description": "Total days student was present"
+    },
+    "attendance_percentage": {
+      "type": "number",
+      "description": "Calculated attendance percentage"
+    },
+    "is_at_risk": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if attendance is below 75%"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year"
+    },
+    "last_calculated": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when insight was last calculated"
+    }
+  },
+  "required": [
+    "student_id",
+    "student_name",
+    "attendance_percentage"
+  ]
+}

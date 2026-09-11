@@ -1,0 +1,86 @@
+{
+  "name": "FeeDue",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student ID"
+    },
+    "fee_head_id": {
+      "type": "string",
+      "description": "Reference to fee head"
+    },
+    "fee_head_name": {
+      "type": "string",
+      "description": "Name of the fee head"
+    },
+    "due_amount": {
+      "type": "number",
+      "description": "Amount due"
+    },
+    "paid_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Amount paid"
+    },
+    "balance_amount": {
+      "type": "number",
+      "description": "Balance amount"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Due date"
+    },
+    "due_month": {
+      "type": "string",
+      "description": "Due month (for monthly fees)"
+    },
+    "due_year": {
+      "type": "string",
+      "description": "Due year"
+    },
+    "late_fine": {
+      "type": "number",
+      "default": 0,
+      "description": "Late fine if applicable"
+    },
+    "discount_applied": {
+      "type": "number",
+      "default": 0,
+      "description": "Discount applied"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "partially_paid",
+        "waived",
+        "overdue"
+      ],
+      "default": "pending",
+      "description": "Payment status"
+    }
+  },
+  "required": [
+    "student_id",
+    "fee_head_id",
+    "fee_head_name",
+    "due_amount",
+    "balance_amount",
+    "due_date",
+    "academic_year"
+  ],
+  "rls": {
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

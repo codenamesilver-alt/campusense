@@ -1,0 +1,17 @@
+{
+  "name": "Department",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the department (e.g., Academics, Administration)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the department"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

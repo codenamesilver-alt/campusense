@@ -1,0 +1,34 @@
+{
+  "name": "Holiday",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Name of the holiday or event"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "The date of the holiday"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "national_holiday",
+        "school_event",
+        "vacation",
+        "examination"
+      ],
+      "description": "Type of the event"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description for the holiday or event"
+    }
+  },
+  "required": [
+    "title",
+    "date",
+    "type"
+  ]
+}

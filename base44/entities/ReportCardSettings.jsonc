@@ -1,0 +1,93 @@
+{
+  "name": "ReportCardSettings",
+  "type": "object",
+  "properties": {
+    "school_logo_url": {
+      "type": "string",
+      "description": "URL of the uploaded school logo"
+    },
+    "header_image_url": {
+      "type": "string",
+      "description": "URL of the uploaded header image for report card"
+    },
+    "school_name": {
+      "type": "string"
+    },
+    "school_address": {
+      "type": "string"
+    },
+    "school_phone": {
+      "type": "string"
+    },
+    "school_website": {
+      "type": "string"
+    },
+    "academic_session": {
+      "type": "string",
+      "description": "e.g., 2025-2026"
+    },
+    "scholastic_grades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "grade": {
+            "type": "string"
+          },
+          "min_percentage": {
+            "type": "number"
+          },
+          "max_percentage": {
+            "type": "number"
+          },
+          "remark": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Custom grading scale for scholastic areas"
+    },
+    "co_scholastic_grades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "grade": {
+            "type": "string"
+          },
+          "min_score": {
+            "type": "number"
+          },
+          "max_score": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Custom grading scale for co-scholastic areas"
+    },
+    "enable_principal_remarks": {
+      "type": "boolean",
+      "default": true
+    },
+    "enable_teacher_remarks": {
+      "type": "boolean",
+      "default": true
+    },
+    "principal_signature_label": {
+      "type": "string",
+      "default": "Signature of Principal"
+    },
+    "teacher_signature_label": {
+      "type": "string",
+      "default": "Signature of Class Teacher"
+    },
+    "parent_signature_label": {
+      "type": "string",
+      "default": "Signature of Parent/Guardian"
+    }
+  },
+  "required": []
+}

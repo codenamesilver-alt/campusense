@@ -1,0 +1,13 @@
+{
+  "name": "Designation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the designation (e.g., Principal, Senior Teacher)"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

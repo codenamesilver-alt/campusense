@@ -1,0 +1,47 @@
+{
+  "name": "FeesMaster",
+  "type": "object",
+  "properties": {
+    "fees_group": {
+      "type": "string",
+      "description": "Selected fees group"
+    },
+    "fees_type": {
+      "type": "string",
+      "description": "Selected fees type"
+    },
+    "class": {
+      "type": "string",
+      "description": "Class for which fees is applicable"
+    },
+    "section": {
+      "type": "string",
+      "description": "Section for which fees is applicable"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Fees amount"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Due date for payment"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Status of the fees master"
+    }
+  },
+  "required": [
+    "fees_group",
+    "fees_type",
+    "class",
+    "amount",
+    "due_date"
+  ]
+}

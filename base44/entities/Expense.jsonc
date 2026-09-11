@@ -1,0 +1,96 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "expense_id": {
+      "type": "string",
+      "description": "Auto-generated unique expense ID"
+    },
+    "date_of_expense": {
+      "type": "string",
+      "format": "date"
+    },
+    "expense_head_id": {
+      "type": "string",
+      "description": "Reference to the ExpenseHead entity"
+    },
+    "expense_head_name": {
+      "type": "string",
+      "description": "Name of the expense head for quick reference"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "payee_vendor_name": {
+      "type": "string",
+      "description": "Name of the payee or vendor"
+    },
+    "payment_mode": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "bank_transfer",
+        "cheque",
+        "upi",
+        "online"
+      ]
+    },
+    "reference_no": {
+      "type": "string",
+      "description": "Reference number for the transaction (optional)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Additional remarks or description (optional)"
+    },
+    "bill_invoice_url": {
+      "type": "string",
+      "description": "URL of the uploaded bill or invoice file (optional)"
+    }
+  },
+  "required": [
+    "expense_id",
+    "date_of_expense",
+    "expense_head_id",
+    "amount",
+    "payee_vendor_name",
+    "payment_mode"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "accountant"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "accountant"
+          ]
+        }
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "accountant"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

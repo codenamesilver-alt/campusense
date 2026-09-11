@@ -1,0 +1,21 @@
+{
+  "name": "RolePermission",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "description": "The name of the role (e.g., admin, teacher, student)"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "A list of permission keys for this role"
+    }
+  },
+  "required": [
+    "role",
+    "permissions"
+  ]
+}

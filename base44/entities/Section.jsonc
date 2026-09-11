@@ -1,0 +1,13 @@
+{
+  "name": "Section",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the section (e.g., A, Bluebirds)"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

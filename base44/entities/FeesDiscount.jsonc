@@ -1,0 +1,58 @@
+{
+  "name": "FeesDiscount",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student ID"
+    },
+    "discount_code": {
+      "type": "string",
+      "description": "Discount code"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "fixed_amount"
+      ],
+      "description": "Type of discount"
+    },
+    "percentage": {
+      "type": "number",
+      "description": "Percentage discount"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Fixed amount discount"
+    },
+    "duration_type": {
+      "type": "string",
+      "enum": [
+        "onetime",
+        "permanent"
+      ],
+      "description": "Duration of discount"
+    },
+    "applied_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when discount was applied"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Status of the discount"
+    }
+  },
+  "required": [
+    "student_id",
+    "discount_code",
+    "discount_type",
+    "duration_type"
+  ]
+}

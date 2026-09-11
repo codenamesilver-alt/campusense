@@ -1,0 +1,62 @@
+{
+  "name": "BookIssue",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "Reference to Book"
+    },
+    "borrower_id": {
+      "type": "string",
+      "description": "Student or Staff ID"
+    },
+    "borrower_type": {
+      "type": "string",
+      "enum": [
+        "student",
+        "staff"
+      ]
+    },
+    "borrower_name": {
+      "type": "string",
+      "description": "Name of borrower"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "return_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Actual return date"
+    },
+    "fine_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "issued",
+        "returned",
+        "overdue"
+      ],
+      "default": "issued"
+    },
+    "remarks": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "book_id",
+    "borrower_id",
+    "borrower_type",
+    "borrower_name",
+    "issue_date",
+    "due_date"
+  ]
+}

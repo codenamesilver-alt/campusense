@@ -1,0 +1,26 @@
+{
+  "name": "FeesType",
+  "type": "object",
+  "properties": {
+    "fees_type_name": {
+      "type": "string",
+      "description": "Name of the fees type"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the fees type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Status of the fees type"
+    }
+  },
+  "required": [
+    "fees_type_name"
+  ]
+}

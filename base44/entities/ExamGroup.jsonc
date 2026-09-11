@@ -1,0 +1,27 @@
+{
+  "name": "ExamGroup",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the exam group (e.g., Unit Test 1, Half-Yearly)"
+    },
+    "exam_type": {
+      "type": "string",
+      "description": "Type of exam"
+    },
+    "academic_session": {
+      "type": "string",
+      "description": "Academic session (e.g., 2024-25)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Notes or description for the exam group"
+    }
+  },
+  "required": [
+    "name",
+    "exam_type",
+    "academic_session"
+  ]
+}

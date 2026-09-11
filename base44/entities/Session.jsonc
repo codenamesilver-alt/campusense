@@ -1,0 +1,27 @@
+{
+  "name": "Session",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "e.g., 2024-2025"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "is_current": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name",
+    "start_date",
+    "end_date"
+  ]
+}

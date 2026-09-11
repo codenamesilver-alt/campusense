@@ -1,0 +1,102 @@
+{
+  "name": "PayrollRecord",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string",
+      "description": "Reference to Staff ID"
+    },
+    "staff_name": {
+      "type": "string",
+      "description": "Staff full name"
+    },
+    "staff_code": {
+      "type": "string",
+      "description": "Staff ID code"
+    },
+    "designation": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string"
+    },
+    "pan_number": {
+      "type": "string"
+    },
+    "pf_number": {
+      "type": "string"
+    },
+    "bank_account_number": {
+      "type": "string"
+    },
+    "bank_name": {
+      "type": "string"
+    },
+    "payroll_month": {
+      "type": "string",
+      "description": "Month in yyyy-MM format"
+    },
+    "payroll_year": {
+      "type": "string",
+      "description": "Year e.g. 2025"
+    },
+    "payroll_month_label": {
+      "type": "string",
+      "description": "e.g. April 2025"
+    },
+    "basic_salary": {
+      "type": "number",
+      "default": 0
+    },
+    "hra": {
+      "type": "number",
+      "default": 0
+    },
+    "transport_allowance": {
+      "type": "number",
+      "default": 0
+    },
+    "other_allowance": {
+      "type": "number",
+      "default": 0
+    },
+    "gross_salary": {
+      "type": "number",
+      "default": 0
+    },
+    "pf_deduction": {
+      "type": "number",
+      "default": 0
+    },
+    "tax_deduction": {
+      "type": "number",
+      "default": 0
+    },
+    "other_deduction": {
+      "type": "number",
+      "default": 0
+    },
+    "total_deductions": {
+      "type": "number",
+      "default": 0
+    },
+    "net_salary": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "generated",
+        "paid"
+      ],
+      "default": "generated"
+    }
+  },
+  "required": [
+    "staff_id",
+    "staff_name",
+    "payroll_month",
+    "payroll_year"
+  ]
+}

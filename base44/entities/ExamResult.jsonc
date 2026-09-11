@@ -1,0 +1,123 @@
+{
+  "name": "ExamResult",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Reference to the Student"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Student's full name"
+    },
+    "exam_schedule_id": {
+      "type": "string",
+      "description": "Reference to the specific ExamSchedule"
+    },
+    "exam_group_id": {
+      "type": "string",
+      "description": "Reference to the ExamGroup"
+    },
+    "exam_group_name": {
+      "type": "string",
+      "description": "Name of the exam group"
+    },
+    "subject_id": {
+      "type": "string",
+      "description": "Reference to the Subject"
+    },
+    "subject_name": {
+      "type": "string",
+      "description": "Name of the subject"
+    },
+    "class": {
+      "type": "string",
+      "description": "Class name"
+    },
+    "section": {
+      "type": "string",
+      "description": "Section name"
+    },
+    "max_marks": {
+      "type": "number",
+      "default": 100,
+      "description": "Maximum marks for this exam"
+    },
+    "marks_obtained": {
+      "type": "number"
+    },
+    "percentage": {
+      "type": "number",
+      "description": "Percentage obtained"
+    },
+    "grade": {
+      "type": "string",
+      "description": "Auto-calculated grade (e.g., A1, B2)"
+    },
+    "remarks": {
+      "type": "string"
+    },
+    "attendance_status": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent"
+      ],
+      "default": "present"
+    },
+    "academic_session": {
+      "type": "string"
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the result is visible to students/parents"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "entered",
+        "verified",
+        "published"
+      ],
+      "default": "entered"
+    }
+  },
+  "required": [
+    "student_id",
+    "exam_group_id",
+    "marks_obtained"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "teacher"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "teacher"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

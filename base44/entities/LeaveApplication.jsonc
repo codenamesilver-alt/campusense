@@ -1,0 +1,71 @@
+{
+  "name": "LeaveApplication",
+  "type": "object",
+  "properties": {
+    "applicant_id": {
+      "type": "string",
+      "description": "ID of the student or staff applying"
+    },
+    "applicant_type": {
+      "type": "string",
+      "enum": [
+        "student",
+        "staff"
+      ],
+      "description": "Type of applicant"
+    },
+    "applicant_name": {
+      "type": "string",
+      "description": "Name of the applicant for display"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "leave_type": {
+      "type": "string",
+      "enum": [
+        "sick_leave",
+        "casual_leave",
+        "earned_leave",
+        "maternity_leave",
+        "paternity_leave",
+        "unpaid_leave",
+        "other"
+      ],
+      "description": "Type of leave",
+      "default": "casual_leave"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "approver_id": {
+      "type": "string",
+      "description": "ID of the staff who approved/rejected"
+    },
+    "approver_comments": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "applicant_id",
+    "applicant_type",
+    "applicant_name",
+    "start_date",
+    "end_date",
+    "reason"
+  ]
+}

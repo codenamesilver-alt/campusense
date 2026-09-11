@@ -1,0 +1,30 @@
+{
+  "name": "StaffAttendance",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent",
+        "half_day",
+        "on_leave"
+      ]
+    },
+    "remarks": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "staff_id",
+    "date",
+    "status"
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "name": "Income",
+  "type": "object",
+  "properties": {
+    "transaction_id": {
+      "type": "string",
+      "description": "Auto-generated unique transaction ID"
+    },
+    "date_of_transaction": {
+      "type": "string",
+      "format": "date"
+    },
+    "income_head_id": {
+      "type": "string",
+      "description": "Reference to the IncomeHead entity"
+    },
+    "income_head_name": {
+      "type": "string",
+      "description": "Name of the income head for quick reference"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "payer_name": {
+      "type": "string",
+      "description": "Name of the person/entity paying (optional)"
+    },
+    "payment_mode": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "bank_transfer",
+        "upi",
+        "cheque",
+        "online",
+        "others"
+      ]
+    },
+    "reference_no": {
+      "type": "string",
+      "description": "Reference number for bank transfers, cheques, etc. (optional)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Additional remarks or description (optional)"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "URL of the uploaded proof/receipt file (optional)"
+    }
+  },
+  "required": [
+    "transaction_id",
+    "date_of_transaction",
+    "income_head_id",
+    "amount",
+    "payment_mode"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "accountant"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "accountant"
+          ]
+        }
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "accountant"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

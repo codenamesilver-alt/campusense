@@ -1,0 +1,38 @@
+import { base44 } from '@/api/base44Client';
+
+export const Student = base44.entities.Student;
+export const Staff = base44.entities.Staff;
+export const Class = base44.entities.Class;
+export const Section = base44.entities.Section;
+export const Subject = base44.entities.Subject;
+export const SubjectGroup = base44.entities.SubjectGroup;
+export const Timetable = base44.entities.Timetable;
+export const Attendance = base44.entities.Attendance;
+export const Fee = base44.entities.Fee;
+export const FeeHead = base44.entities.FeeHead;
+export const FeeDue = base44.entities.FeeDue;
+export const FeeTransaction = base44.entities.FeeTransaction;
+export const ExamGroup = base44.entities.ExamGroup;
+export const ExamSchedule = base44.entities.ExamSchedule;
+export const ExamResult = base44.entities.ExamResult;
+export const StudentResult = base44.entities.StudentResult;
+export const Notice = base44.entities.Notice;
+export const SchoolSetting = base44.entities.SchoolSetting;
+export const Session = base44.entities.Session;
+export const RolePermission = base44.entities.RolePermission;
+export const Income = base44.entities.Income;
+export const IncomeHead = base44.entities.IncomeHead;
+export const Expense = base44.entities.Expense;
+export const ExpenseHead = base44.entities.ExpenseHead;
+export const Department = base44.entities.Department;
+export const Designation = base44.entities.Designation;
+export const Book = base44.entities.Book;
+export const BookIssue = base44.entities.BookIssue;
+export const InventoryItem = base44.entities.InventoryItem;
+export const Route = base44.entities.Route;
+export const Vehicle = base44.entities.Vehicle;
+export const LeaveApplication = base44.entities.LeaveApplication;
+export const AdmissionEnquiry = base44.entities.AdmissionEnquiry;
+export const Complaint = base44.entities.Complaint;
+
+export default base44;

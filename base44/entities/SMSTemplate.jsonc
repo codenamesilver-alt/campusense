@@ -1,0 +1,18 @@
+{
+  "name": "SMSTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Internal name for the template"
+    },
+    "body": {
+      "type": "string",
+      "description": "Text content for the SMS. Use placeholders like {{student_name}}."
+    }
+  },
+  "required": [
+    "name",
+    "body"
+  ]
+}

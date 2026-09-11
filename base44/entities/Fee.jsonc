@@ -1,0 +1,76 @@
+{
+  "name": "Fee",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student's ID"
+    },
+    "fee_type": {
+      "type": "string",
+      "enum": [
+        "tuition",
+        "library",
+        "transport",
+        "exam",
+        "sports",
+        "other"
+      ],
+      "description": "Type of fee"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Fee amount"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Due date for payment"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when fee was paid"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "overdue",
+        "waived"
+      ],
+      "default": "pending",
+      "description": "Payment status"
+    },
+    "discount": {
+      "type": "number",
+      "default": 0,
+      "description": "Discount amount"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "card",
+        "bank_transfer",
+        "online"
+      ],
+      "description": "Payment method"
+    },
+    "receipt_number": {
+      "type": "string",
+      "description": "Receipt number"
+    },
+    "remarks": {
+      "type": "string",
+      "description": "Additional remarks"
+    }
+  },
+  "required": [
+    "student_id",
+    "fee_type",
+    "amount",
+    "due_date"
+  ]
+}

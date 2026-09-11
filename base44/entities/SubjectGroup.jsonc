@@ -1,0 +1,26 @@
+{
+  "name": "SubjectGroup",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the group (e.g., Science Stream)"
+    },
+    "class_id": {
+      "type": "string",
+      "description": "The class this group belongs to"
+    },
+    "subject_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of subject IDs in this group"
+    }
+  },
+  "required": [
+    "name",
+    "class_id",
+    "subject_ids"
+  ]
+}

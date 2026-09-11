@@ -1,0 +1,83 @@
+{
+  "name": "LeaveManagementPolicy",
+  "type": "object",
+  "properties": {
+    "paid_leave_days": {
+      "type": "number",
+      "default": 12,
+      "description": "Annual Paid Leave days for permanent staff (lump sum mode)"
+    },
+    "sick_leave_days": {
+      "type": "number",
+      "default": 12,
+      "description": "Annual Sick Leave days for permanent staff (lump sum mode)"
+    },
+    "casual_leave_days": {
+      "type": "number",
+      "default": 12,
+      "description": "Annual Casual Leave days for permanent staff (lump sum mode)"
+    },
+    "maternity_leave_days": {
+      "type": "number",
+      "default": 180,
+      "description": "Maternity Leave days for female permanent staff"
+    },
+    "paid_leave_accrual_mode": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "annual = lump sum, monthly = credited per month"
+    },
+    "sick_leave_accrual_mode": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "monthly"
+      ],
+      "default": "annual"
+    },
+    "casual_leave_accrual_mode": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "monthly"
+      ],
+      "default": "annual"
+    },
+    "paid_leave_monthly_credit": {
+      "type": "number",
+      "default": 1,
+      "description": "Paid leave days credited per month"
+    },
+    "sick_leave_monthly_credit": {
+      "type": "number",
+      "default": 1,
+      "description": "Sick leave days credited per month"
+    },
+    "casual_leave_monthly_credit": {
+      "type": "number",
+      "default": 1,
+      "description": "Casual leave days credited per month"
+    },
+    "carry_forward_paid_leave": {
+      "type": "boolean",
+      "default": false
+    },
+    "carry_forward_sick_leave": {
+      "type": "boolean",
+      "default": false
+    },
+    "carry_forward_casual_leave": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional policy notes"
+    }
+  },
+  "required": []
+}

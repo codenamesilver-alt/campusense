@@ -1,0 +1,41 @@
+{
+  "name": "Route",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the transport route"
+    },
+    "stops": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of stops in the route"
+    },
+    "vehicle_id": {
+      "type": "string",
+      "description": "Assigned vehicle ID"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "Assigned driver (Staff) ID"
+    },
+    "route_fee": {
+      "type": "number",
+      "description": "Monthly fee for this route"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name",
+    "route_fee"
+  ]
+}

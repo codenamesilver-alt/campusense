@@ -1,0 +1,74 @@
+{
+  "name": "Complaint",
+  "type": "object",
+  "properties": {
+    "complaint_type": {
+      "type": "string",
+      "enum": [
+        "study",
+        "fees",
+        "teacher",
+        "student"
+      ],
+      "description": "Type of complaint"
+    },
+    "complaint_by": {
+      "type": "string",
+      "description": "Name of the person making the complaint"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when complaint was lodged"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the complaint"
+    },
+    "action_taken": {
+      "type": "string",
+      "description": "Action taken to resolve the complaint"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Staff member assigned to handle this complaint"
+    },
+    "note": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "attachment_url": {
+      "type": "string",
+      "description": "URL to attached documents"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "resolved",
+        "closed"
+      ],
+      "default": "open",
+      "description": "Current status of the complaint"
+    }
+  },
+  "required": [
+    "complaint_type",
+    "complaint_by",
+    "phone",
+    "date",
+    "description"
+  ],
+  "rls": {
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "name": "ExamSchedule",
+  "type": "object",
+  "properties": {
+    "exam_group_id": {
+      "type": "string",
+      "description": "Reference to the ExamGroup"
+    },
+    "class": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string"
+    },
+    "subject_name": {
+      "type": "string"
+    },
+    "exam_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "meeting_slot": {
+      "type": "string",
+      "enum": [
+        "1st Meeting",
+        "2nd Meeting"
+      ],
+      "description": "Morning or Afternoon slot"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "invigilator": {
+      "type": "string",
+      "description": "Name of the invigilating staff (optional)"
+    },
+    "max_marks": {
+      "type": "number"
+    },
+    "passing_marks": {
+      "type": "number"
+    },
+    "room_no": {
+      "type": "string",
+      "description": "Room number for the exam (optional)"
+    },
+    "academic_session": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "exam_group_id",
+    "class",
+    "section",
+    "subject_name",
+    "max_marks",
+    "academic_session"
+  ]
+}

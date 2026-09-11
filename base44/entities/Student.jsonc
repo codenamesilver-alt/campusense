@@ -1,0 +1,136 @@
+{
+  "name": "Student",
+  "type": "object",
+  "properties": {
+    "admission_number": {
+      "type": "string",
+      "description": "Unique admission number"
+    },
+    "first_name": {
+      "type": "string",
+      "description": "Student's first name"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "Student's last name"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "description": "Student's date of birth"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ],
+      "description": "Student's gender"
+    },
+    "class": {
+      "type": "string",
+      "description": "Current class"
+    },
+    "section": {
+      "type": "string",
+      "description": "Current section"
+    },
+    "roll_number": {
+      "type": "string",
+      "description": "Roll number in class"
+    },
+    "father_name": {
+      "type": "string",
+      "description": "Father's name"
+    },
+    "mother_name": {
+      "type": "string",
+      "description": "Mother's name"
+    },
+    "guardian_phone": {
+      "type": "string",
+      "description": "Guardian's phone number"
+    },
+    "guardian_email": {
+      "type": "string",
+      "description": "Guardian's email address"
+    },
+    "address": {
+      "type": "string",
+      "description": "Student's address"
+    },
+    "blood_group": {
+      "type": "string",
+      "enum": [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-"
+      ],
+      "description": "Student's blood group"
+    },
+    "house": {
+      "type": "string",
+      "description": "Student's house"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of admission"
+    },
+    "aadhaar_number": {
+      "type": "string",
+      "description": "Student's Aadhaar Card Number"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year / session (e.g. 2026-27)"
+    },
+    "is_new_admission": {
+      "type": "boolean",
+      "description": "True if this is a fresh/new admission. False if student was already enrolled (e.g. imported via CSV). Admission Fee is only applicable for new admissions."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "graduated",
+        "transferred",
+        "deleted"
+      ],
+      "default": "active",
+      "description": "Student status"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL to student's photo"
+    },
+    "disable_reason": {
+      "type": "string",
+      "description": "Reason for disabling or deleting a student"
+    },
+    "disabled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the student was disabled or deleted"
+    }
+  },
+  "required": [
+    "first_name",
+    "class",
+    "section"
+  ],
+  "rls": {
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

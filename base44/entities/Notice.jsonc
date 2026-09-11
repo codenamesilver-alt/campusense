@@ -1,0 +1,88 @@
+{
+  "name": "Notice",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Notice title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Notice content"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "general",
+        "academic",
+        "exam",
+        "fee",
+        "holiday",
+        "event",
+        "urgent"
+      ],
+      "description": "Notice category"
+    },
+    "target_audience": {
+      "type": "string",
+      "enum": [
+        "all",
+        "students",
+        "staff",
+        "parents",
+        "specific_class"
+      ],
+      "description": "Target audience"
+    },
+    "specific_class": {
+      "type": "string",
+      "description": "Specific class if target is specific_class"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium",
+      "description": "Notice priority"
+    },
+    "publish_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Publication date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expiry date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ],
+      "default": "draft",
+      "description": "Notice status"
+    },
+    "attachment_url": {
+      "type": "string",
+      "description": "URL to attachment"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to pin the notice to the top"
+    }
+  },
+  "required": [
+    "title",
+    "content",
+    "category",
+    "target_audience"
+  ]
+}

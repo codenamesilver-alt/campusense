@@ -1,0 +1,33 @@
+{
+  "name": "AdmitCardTemplate",
+  "type": "object",
+  "properties": {
+    "template_name": {
+      "type": "string"
+    },
+    "show_photo": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_signature": {
+      "type": "boolean",
+      "default": true
+    },
+    "school_logo_url": {
+      "type": "string"
+    },
+    "principal_signature_url": {
+      "type": "string"
+    },
+    "custom_instructions": {
+      "type": "string"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "template_name"
+  ]
+}

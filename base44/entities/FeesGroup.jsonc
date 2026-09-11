@@ -1,0 +1,26 @@
+{
+  "name": "FeesGroup",
+  "type": "object",
+  "properties": {
+    "fees_group_name": {
+      "type": "string",
+      "description": "Name of the fees group"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the fees group"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Status of the fees group"
+    }
+  },
+  "required": [
+    "fees_group_name"
+  ]
+}

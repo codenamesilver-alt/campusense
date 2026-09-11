@@ -1,0 +1,77 @@
+{
+  "name": "StudentDiscount",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student ID"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "permanent",
+        "one_time"
+      ],
+      "description": "Type of discount"
+    },
+    "discount_mode": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "fixed_amount"
+      ],
+      "description": "Discount calculation mode"
+    },
+    "percentage": {
+      "type": "number",
+      "description": "Discount percentage"
+    },
+    "fixed_amount": {
+      "type": "number",
+      "description": "Fixed discount amount"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for discount"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Who approved the discount"
+    },
+    "approval_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of approval"
+    },
+    "applicable_fee_heads": {
+      "type": "string",
+      "description": "Comma-separated fee head IDs this discount applies to"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Valid from date"
+    },
+    "valid_to": {
+      "type": "string",
+      "format": "date",
+      "description": "Valid to date (for one-time discounts)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expired",
+        "revoked"
+      ],
+      "default": "active",
+      "description": "Status of the discount"
+    }
+  },
+  "required": [
+    "student_id",
+    "discount_type",
+    "discount_mode",
+    "reason"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "name": "StudentFeeMapping",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student ID"
+    },
+    "fee_head_id": {
+      "type": "string",
+      "description": "Reference to fee head"
+    },
+    "fee_head_name": {
+      "type": "string",
+      "description": "Name of the fee head"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Fee amount for this student"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Due date for this fee"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "one_time",
+        "monthly",
+        "quarterly",
+        "annually",
+        "per_term"
+      ],
+      "description": "Frequency of fee collection"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year"
+    },
+    "override_amount": {
+      "type": "number",
+      "description": "Override amount if different from class structure"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "waived"
+      ],
+      "default": "active",
+      "description": "Status of the fee mapping"
+    }
+  },
+  "required": [
+    "student_id",
+    "fee_head_id",
+    "fee_head_name",
+    "amount",
+    "due_date",
+    "frequency",
+    "academic_year"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Class",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the class (e.g., Class 10)"
+    },
+    "numeric_value": {
+      "type": "number",
+      "description": "Numeric value for sorting and promotion (e.g., 10)"
+    }
+  },
+  "required": [
+    "name",
+    "numeric_value"
+  ]
+}

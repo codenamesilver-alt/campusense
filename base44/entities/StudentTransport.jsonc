@@ -1,0 +1,28 @@
+{
+  "name": "StudentTransport",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string"
+    },
+    "route_id": {
+      "type": "string"
+    },
+    "stop_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "student_id",
+    "route_id",
+    "stop_name"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "ClassFeeStructure",
+  "type": "object",
+  "properties": {
+    "class": {
+      "type": "string",
+      "description": "Class name"
+    },
+    "section": {
+      "type": "string",
+      "description": "Section name"
+    },
+    "fee_head_id": {
+      "type": "string",
+      "description": "Reference to fee head"
+    },
+    "fee_head_name": {
+      "type": "string",
+      "description": "Name of the fee head"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Fee amount for this class/section"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this fee is enabled for this class"
+    },
+    "due_date": {
+      "type": "string",
+      "description": "Due date for this fee (day of month or specific date)"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Status of the fee structure"
+    }
+  },
+  "required": [
+    "class",
+    "fee_head_id",
+    "fee_head_name",
+    "amount",
+    "academic_year"
+  ]
+}

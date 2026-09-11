@@ -1,0 +1,239 @@
+{
+  "name": "Staff",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string",
+      "description": "Unique staff ID"
+    },
+    "first_name": {
+      "type": "string",
+      "description": "Staff's first name"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "Staff's last name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Staff's email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Staff's phone number"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "teacher",
+        "staff",
+        "principal",
+        "accountant"
+      ],
+      "description": "Staff role"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department"
+    },
+    "designation": {
+      "type": "string",
+      "description": "Job designation"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of birth"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ],
+      "description": "Gender"
+    },
+    "address": {
+      "type": "string",
+      "description": "Address"
+    },
+    "joining_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of joining"
+    },
+    "salary": {
+      "type": "number",
+      "description": "Monthly salary"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "terminated"
+      ],
+      "default": "active",
+      "description": "Staff status"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL to staff photo"
+    },
+    "pan_number": {
+      "type": "string",
+      "description": "PAN Card Number"
+    },
+    "pf_number": {
+      "type": "string",
+      "description": "PF Number"
+    },
+    "aadhaar_number": {
+      "type": "string",
+      "description": "Aadhaar Card Number"
+    },
+    "bank_account_number": {
+      "type": "string",
+      "description": "Bank Account Number"
+    },
+    "ifsc_code": {
+      "type": "string",
+      "description": "IFSC Code"
+    },
+    "bank_name": {
+      "type": "string",
+      "description": "Bank Name"
+    },
+    "basic_salary": {
+      "type": "number",
+      "description": "Basic Salary Component"
+    },
+    "hra": {
+      "type": "number",
+      "description": "House Rent Allowance"
+    },
+    "transport_allowance": {
+      "type": "number",
+      "description": "Transport Allowance"
+    },
+    "other_allowance": {
+      "type": "number",
+      "description": "Other Allowances"
+    },
+    "gross_salary": {
+      "type": "number",
+      "description": "Gross Salary (Auto-calculated)"
+    },
+    "pf_deduction": {
+      "type": "number",
+      "description": "PF Deduction"
+    },
+    "tax_deduction": {
+      "type": "number",
+      "description": "Tax Deduction (TDS)"
+    },
+    "other_deduction": {
+      "type": "number",
+      "description": "Other Deductions"
+    },
+    "net_salary": {
+      "type": "number",
+      "description": "Net Salary (Take Home)"
+    },
+    "employment_type": {
+      "type": "string",
+      "enum": [
+        "probation",
+        "permanent"
+      ],
+      "default": "probation",
+      "description": "Employment type - probation or permanent"
+    },
+    "paid_leave_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Available Paid Leave days"
+    },
+    "sick_leave_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Available Sick Leave days"
+    },
+    "casual_leave_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Available Casual Leave days"
+    },
+    "maternity_leave_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Available Maternity Leave days"
+    }
+  },
+  "required": [
+    "staff_id",
+    "first_name",
+    "last_name",
+    "email",
+    "role"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "$or": [
+          {
+            "role": "admin"
+          },
+          {
+            "role": "hr"
+          }
+        ]
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "$or": [
+              {
+                "role": "admin"
+              },
+              {
+                "role": "hr"
+              }
+            ]
+          }
+        },
+        {
+          "id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "$or": [
+              {
+                "role": "admin"
+              },
+              {
+                "role": "hr"
+              }
+            ]
+          }
+        },
+        {
+          "id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "name": "Examination",
+  "type": "object",
+  "properties": {
+    "exam_name": {
+      "type": "string",
+      "description": "Name of the examination"
+    },
+    "class": {
+      "type": "string",
+      "description": "Class"
+    },
+    "section": {
+      "type": "string",
+      "description": "Section"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Subject"
+    },
+    "exam_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Exam date"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "End time"
+    },
+    "total_marks": {
+      "type": "number",
+      "description": "Total marks"
+    },
+    "pass_marks": {
+      "type": "number",
+      "description": "Minimum passing marks"
+    },
+    "room_number": {
+      "type": "string",
+      "description": "Examination room"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "ongoing",
+        "completed",
+        "cancelled"
+      ],
+      "default": "scheduled",
+      "description": "Exam status"
+    }
+  },
+  "required": [
+    "exam_name",
+    "class",
+    "section",
+    "subject",
+    "exam_date",
+    "total_marks"
+  ]
+}

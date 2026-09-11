@@ -1,0 +1,56 @@
+{
+  "name": "FeeHead",
+  "type": "object",
+  "properties": {
+    "fee_head_name": {
+      "type": "string",
+      "description": "Name of the fee head"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the fee head"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "one_time",
+        "monthly",
+        "quarterly",
+        "annually",
+        "per_term"
+      ],
+      "description": "Frequency of fee collection"
+    },
+    "applicability": {
+      "type": "string",
+      "enum": [
+        "compulsory",
+        "optional"
+      ],
+      "description": "Whether fee is compulsory or optional"
+    },
+    "tax_applicable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether tax is applicable"
+    },
+    "tax_percentage": {
+      "type": "number",
+      "description": "Tax percentage if applicable"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Status of the fee head"
+    }
+  },
+  "required": [
+    "fee_head_name",
+    "frequency",
+    "applicability"
+  ]
+}

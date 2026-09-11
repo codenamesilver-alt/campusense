@@ -1,0 +1,65 @@
+{
+  "name": "InventoryItem",
+  "type": "object",
+  "properties": {
+    "item_name": {
+      "type": "string",
+      "description": "Name of the inventory item"
+    },
+    "item_code": {
+      "type": "string",
+      "description": "Unique item code"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "Reference to ItemCategory"
+    },
+    "category_name": {
+      "type": "string",
+      "description": "Category name for display"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "Reference to ItemSupplier"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unit of measurement (pcs, kg, ltr)"
+    },
+    "total_quantity": {
+      "type": "number",
+      "description": "Total quantity in stock"
+    },
+    "available_quantity": {
+      "type": "number",
+      "description": "Available quantity"
+    },
+    "unit_price": {
+      "type": "number",
+      "description": "Price per unit"
+    },
+    "minimum_stock": {
+      "type": "number",
+      "description": "Minimum stock alert level"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "item_name",
+    "item_code",
+    "category_name",
+    "unit",
+    "total_quantity",
+    "available_quantity"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "SchoolEvent",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Event title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Event description"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "holiday",
+        "exam",
+        "event",
+        "meeting",
+        "sports",
+        "cultural",
+        "other"
+      ],
+      "description": "Type of event"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "End date"
+    },
+    "is_all_day": {
+      "type": "boolean",
+      "default": true,
+      "description": "All day event"
+    },
+    "applicable_to": {
+      "type": "string",
+      "enum": [
+        "all",
+        "students",
+        "staff",
+        "specific_class"
+      ],
+      "default": "all",
+      "description": "Who this event applies to"
+    },
+    "specific_class": {
+      "type": "string",
+      "description": "Specific class if applicable"
+    },
+    "color": {
+      "type": "string",
+      "description": "Event color hex"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year"
+    }
+  },
+  "required": [
+    "title",
+    "event_type",
+    "start_date"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Subject",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the subject (e.g., Mathematics)"
+    },
+    "code": {
+      "type": "string",
+      "description": "Subject code (e.g., MATH101)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "scholastic",
+        "co-scholastic"
+      ],
+      "default": "scholastic"
+    }
+  },
+  "required": [
+    "name",
+    "code"
+  ]
+}

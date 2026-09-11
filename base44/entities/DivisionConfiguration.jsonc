@@ -1,0 +1,22 @@
+{
+  "name": "DivisionConfiguration",
+  "type": "object",
+  "properties": {
+    "division_name": {
+      "type": "string",
+      "description": "e.g., First Division, Distinction"
+    },
+    "min_percentage": {
+      "type": "number",
+      "description": "Minimum overall percentage to achieve this division"
+    },
+    "academic_session": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "division_name",
+    "min_percentage",
+    "academic_session"
+  ]
+}

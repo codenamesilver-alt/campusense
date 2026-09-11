@@ -1,0 +1,33 @@
+{
+  "name": "ClassTeacherAssignment",
+  "type": "object",
+  "properties": {
+    "class_id": {
+      "type": "string"
+    },
+    "class_name": {
+      "type": "string"
+    },
+    "section_id": {
+      "type": "string"
+    },
+    "section_name": {
+      "type": "string"
+    },
+    "teacher_id": {
+      "type": "string"
+    },
+    "teacher_name": {
+      "type": "string"
+    },
+    "academic_year": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "class_id",
+    "section_id",
+    "teacher_id",
+    "academic_year"
+  ]
+}

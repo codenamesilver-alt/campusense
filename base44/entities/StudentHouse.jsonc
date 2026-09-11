@@ -1,0 +1,30 @@
+{
+  "name": "StudentHouse",
+  "type": "object",
+  "properties": {
+    "house_name": {
+      "type": "string",
+      "description": "Name of the house"
+    },
+    "house_color": {
+      "type": "string",
+      "description": "Associated color of the house"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the house"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Status of the house"
+    }
+  },
+  "required": [
+    "house_name"
+  ]
+}

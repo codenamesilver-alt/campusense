@@ -1,0 +1,63 @@
+{
+  "name": "FeesPayment",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student ID"
+    },
+    "receipt_number": {
+      "type": "string",
+      "description": "Receipt number"
+    },
+    "fees_type": {
+      "type": "string",
+      "description": "Type of fees paid"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Amount paid"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of payment"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "card",
+        "bank_transfer",
+        "online"
+      ],
+      "description": "Payment method"
+    },
+    "month": {
+      "type": "string",
+      "description": "Month for which fees was paid"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "pending",
+        "cancelled"
+      ],
+      "default": "paid",
+      "description": "Payment status"
+    }
+  },
+  "required": [
+    "student_id",
+    "receipt_number",
+    "fees_type",
+    "amount",
+    "payment_date",
+    "month"
+  ]
+}

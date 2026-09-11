@@ -1,0 +1,25 @@
+{
+  "name": "IncomeHead",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the income head"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the income head"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

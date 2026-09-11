@@ -1,0 +1,100 @@
+{
+  "name": "FeeTransaction",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student ID"
+    },
+    "receipt_number": {
+      "type": "string",
+      "description": "Receipt number"
+    },
+    "transaction_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Transaction date"
+    },
+    "payment_mode": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "cheque",
+        "bank_transfer",
+        "online",
+        "card"
+      ],
+      "description": "Payment mode"
+    },
+    "total_amount": {
+      "type": "number",
+      "description": "Total amount paid"
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Total discount applied"
+    },
+    "late_fine": {
+      "type": "number",
+      "default": 0,
+      "description": "Late fine if applicable"
+    },
+    "tax_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Tax amount"
+    },
+    "net_amount": {
+      "type": "number",
+      "description": "Net amount after discount and tax"
+    },
+    "fee_details": {
+      "type": "string",
+      "description": "JSON string of fee breakdown"
+    },
+    "payment_reference": {
+      "type": "string",
+      "description": "Payment reference number"
+    },
+    "collected_by": {
+      "type": "string",
+      "description": "Staff who collected the fee"
+    },
+    "remarks": {
+      "type": "string",
+      "description": "Additional remarks"
+    },
+    "academic_year": {
+      "type": "string",
+      "description": "Academic year"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "pending",
+        "cancelled",
+        "refunded"
+      ],
+      "default": "completed",
+      "description": "Transaction status"
+    }
+  },
+  "required": [
+    "student_id",
+    "receipt_number",
+    "transaction_date",
+    "payment_mode",
+    "total_amount",
+    "net_amount",
+    "academic_year"
+  ],
+  "rls": {
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "GradeConfiguration",
+  "type": "object",
+  "properties": {
+    "grade_name": {
+      "type": "string",
+      "description": "e.g., A1, A2, B1"
+    },
+    "min_percentage": {
+      "type": "number"
+    },
+    "max_percentage": {
+      "type": "number"
+    },
+    "remark": {
+      "type": "string",
+      "description": "e.g., Outstanding, Excellent"
+    },
+    "academic_session": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "grade_name",
+    "min_percentage",
+    "max_percentage",
+    "academic_session"
+  ]
+}

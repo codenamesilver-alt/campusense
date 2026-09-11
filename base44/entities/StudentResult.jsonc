@@ -1,0 +1,96 @@
+{
+  "name": "StudentResult",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Reference to the Student"
+    },
+    "exam_group_id": {
+      "type": "string",
+      "description": "Reference to the ExamGroup"
+    },
+    "class": {
+      "type": "string",
+      "description": "Class name"
+    },
+    "section": {
+      "type": "string",
+      "description": "Section name"
+    },
+    "academic_session": {
+      "type": "string"
+    },
+    "scholastic_marks": {
+      "type": "object",
+      "description": "HY marks per subject: {subject_id: {perTest, halfYearly, total, grade}}"
+    },
+    "annual_marks": {
+      "type": "object",
+      "description": "Annual marks per subject: {subject_id: {perTest, annual, total, grade}}"
+    },
+    "max_marks_per_test": {
+      "type": "number",
+      "default": 20
+    },
+    "max_marks_half_yearly": {
+      "type": "number",
+      "default": 80
+    },
+    "co_scholastic": {
+      "type": "object",
+      "description": "HY co-scholastic grades: {item_name: grade}"
+    },
+    "annual_co_scholastic": {
+      "type": "object",
+      "description": "Annual co-scholastic grades: {item_name: grade}"
+    },
+    "total_days": {
+      "type": "number",
+      "description": "HY total school days"
+    },
+    "days_present": {
+      "type": "number",
+      "description": "HY days student was present"
+    },
+    "attendance_percentage": {
+      "type": "number",
+      "description": "HY attendance percentage"
+    },
+    "annual_total_days": {
+      "type": "number",
+      "description": "Annual total school days"
+    },
+    "annual_days_present": {
+      "type": "number",
+      "description": "Annual days student was present"
+    },
+    "annual_attendance_percentage": {
+      "type": "number",
+      "description": "Annual attendance percentage"
+    },
+    "teacher_remarks": {
+      "type": "string",
+      "description": "HY teacher remarks"
+    },
+    "annual_teacher_remarks": {
+      "type": "string",
+      "description": "Annual teacher remarks"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "saved",
+        "published"
+      ],
+      "default": "draft"
+    }
+  },
+  "required": [
+    "student_id",
+    "exam_group_id",
+    "class",
+    "section"
+  ]
+}

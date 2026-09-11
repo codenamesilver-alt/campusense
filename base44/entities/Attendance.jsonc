@@ -1,0 +1,56 @@
+{
+  "name": "Attendance",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Student's ID"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Attendance date"
+    },
+    "class": {
+      "type": "string",
+      "description": "Class"
+    },
+    "section": {
+      "type": "string",
+      "description": "Section"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent",
+        "late",
+        "half_day",
+        "on_leave"
+      ],
+      "description": "Attendance status"
+    },
+    "marked_by": {
+      "type": "string",
+      "description": "Staff member who marked attendance"
+    },
+    "remarks": {
+      "type": "string",
+      "description": "Additional remarks"
+    }
+  },
+  "required": [
+    "student_id",
+    "date",
+    "class",
+    "section",
+    "status"
+  ],
+  "rls": {
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
