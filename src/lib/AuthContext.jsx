@@ -77,17 +77,19 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setAuthError(null);
       if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', '/');
+        window.location.replace('/');
+        return;
       }
     } catch (err) {
       console.error('OAuth callback failed:', err);
-      if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', '/');
-      }
       setAuthError({
         type: 'auth_required',
         message: 'Google sign-in failed. Try again.'
       });
+      if (typeof window !== 'undefined') {
+        window.location.replace('/');
+        return;
+      }
     } finally {
       setIsLoadingAuth(false);
       setAuthChecked(true);
