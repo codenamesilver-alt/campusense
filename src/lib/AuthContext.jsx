@@ -38,10 +38,12 @@ export const AuthProvider = ({ children }) => {
           setAuthError({ type: 'unknown', message: e.message });
         }
       } else {
+        const notice = sessionStorage.getItem('campusense_auth_notice');
         setAuthError({
           type: 'auth_required',
-          message: 'Authentication required'
+          message: notice || 'Authentication required'
         });
+        sessionStorage.removeItem('campusense_auth_notice');
       }
       setIsLoadingAuth(false);
       setAuthChecked(true);
@@ -76,6 +78,7 @@ export const AuthProvider = ({ children }) => {
       setUser(res.user);
       setIsAuthenticated(true);
       setAuthError(null);
+      sessionStorage.removeItem('campusense_auth_notice');
       if (typeof window !== 'undefined') {
         window.location.replace('/');
         return;
@@ -83,6 +86,9 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('OAuth callback failed:', err);
       const serverMessage = err.response?.data?.error;
+      if (serverMessage) {
+        sessionStorage.setItem('campusense_auth_notice', serverMessage);
+      }
       setAuthError({
         type: 'auth_required',
         message: serverMessage || 'Google sign-in failed. Try again.'
