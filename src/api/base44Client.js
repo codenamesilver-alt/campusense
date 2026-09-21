@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -123,6 +123,12 @@ const auth = {
   },
   async register(data) {
     const res = await api.post('/auth/register', data);
+    localStorage.setItem('campusense_token', res.data.token);
+    localStorage.setItem('campusense_user', JSON.stringify(res.data.user));
+    return res.data;
+  },
+  async google(profile) {
+    const res = await api.post('/auth/google', profile);
     localStorage.setItem('campusense_token', res.data.token);
     localStorage.setItem('campusense_user', JSON.stringify(res.data.user));
     return res.data;

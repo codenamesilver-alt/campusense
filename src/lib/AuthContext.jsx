@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabase';
 
 const AuthContext = createContext();
 
@@ -19,6 +20,11 @@ export const AuthProvider = ({ children }) => {
   const checkAppState = async () => {
     try {
       setAuthError(null);
+
+      if (typeof window !== 'undefined' && window.location.pathname === '/auth/callback') {
+        await handleOAuthCallback();
+        return;
+      }
 
       const savedToken = localStorage.getItem('campusense_token');
       const savedUser = localStorage.getItem('campusense_user');
@@ -42,6 +48,47 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('App state check failed:', error);
       setAuthError({ type: 'unknown', message: error.message });
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+    }
+  };
+
+  const handleOAuthCallback = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session || !data.session.user?.email) {
+        throw error || new Error('No session');
+      }
+
+      const u = data.session.user;
+      const meta = u.user_metadata || {};
+      const fullName = meta.full_name || meta.name || '';
+      const parts = fullName.split(' ').filter(Boolean);
+
+      const res = await base44.auth.google({
+        access_token: data.session.access_token,
+        email: u.email,
+        first_name: parts[0] || '',
+        last_name: parts.slice(1).join(' '),
+        avatar_url: meta.avatar_url || meta.picture || null
+      });
+
+      setUser(res.user);
+      setIsAuthenticated(true);
+      setAuthError(null);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/');
+      }
+    } catch (err) {
+      console.error('OAuth callback failed:', err);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/');
+      }
+      setAuthError({
+        type: 'auth_required',
+        message: 'Google sign-in failed. Try again.'
+      });
+    } finally {
       setIsLoadingAuth(false);
       setAuthChecked(true);
     }
