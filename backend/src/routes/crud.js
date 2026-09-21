@@ -198,8 +198,8 @@ router.post('/:resource', authenticate, async (req, res, next) => {
       data.created_date = new Date();
     }
 
-    const [id] = await db(table).insert(data);
-    const created = await db(table).where({ id }).first();
+    const rows = await db(table).insert(data).returning('*');
+    const created = Array.isArray(rows) ? rows[0] : rows.rows[0];
     res.status(201).json(created);
   } catch (error) {
     next(error);
@@ -224,7 +224,8 @@ router.post('/:resource/bulk', authenticate, async (req, res, next) => {
       return out;
     });
 
-    const created = await db(table).insert(cleaned).returning('*');
+    const rows = await db(table).insert(cleaned).returning('*');
+    const created = Array.isArray(rows) ? rows : rows.rows;
     res.status(201).json(created);
   } catch (error) {
     next(error);
