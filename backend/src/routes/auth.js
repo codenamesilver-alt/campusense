@@ -80,15 +80,15 @@ router.post('/google', async (req, res, next) => {
 
     if (!user) {
       const password_hash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
-      const [id] = await db('users').insert({
+      const rows = await db('users').insert({
         email: normalizedEmail,
         password_hash,
         first_name: fName,
         last_name: lName,
         role: 'admin',
         status: 'active'
-      });
-      user = await db('users').where({ id }).first();
+      }).returning('*');
+      user = rows[0];
     } else {
       const patch = {};
       if (!user.first_name && fName) patch.first_name = fName;
@@ -156,7 +156,7 @@ router.post('/register', async (req, res, next) => {
     }
 
     const password_hash = await bcrypt.hash(password, 10);
-    const [id] = await db('users').insert({
+    const rows = await db('users').insert({
       email: String(email).toLowerCase().trim(),
       password_hash,
       first_name,
@@ -164,7 +164,8 @@ router.post('/register', async (req, res, next) => {
       phone,
       role: role || 'admin',
       status: 'active'
-    });
+    }).returning('*');
+    const { id } = rows[0];
 
     const token = jwt.sign(
       { id, email: String(email).toLowerCase().trim(), role: role || 'admin' },
