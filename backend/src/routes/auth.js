@@ -12,6 +12,9 @@ const supabase = require('@supabase/supabase-js').createClient(
 
 const router = express.Router();
 
+const PENDING_ROLE = 'pending';
+const PENDING_MESSAGE = 'Welcome to Campusense. Please ask your Admin to assign you a role. Once the role is assigned, please logout and login again to access the system.';
+
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -31,6 +34,10 @@ router.post('/login', async (req, res, next) => {
 
     if (user.status !== 'active') {
       return res.status(403).json({ error: 'Account is not active' });
+    }
+
+    if (user.role === PENDING_ROLE) {
+      return res.status(403).json({ error: PENDING_MESSAGE });
     }
 
     const token = jwt.sign(
@@ -85,7 +92,7 @@ router.post('/google', async (req, res, next) => {
         password_hash,
         first_name: fName,
         last_name: lName,
-        role: 'admin',
+        role: 'pending',
         status: 'active'
       }).returning('*');
       user = rows[0];
@@ -101,6 +108,10 @@ router.post('/google', async (req, res, next) => {
 
     if (user.status !== 'active') {
       return res.status(403).json({ error: 'Account is not active' });
+    }
+
+    if (user.role === PENDING_ROLE) {
+      return res.status(403).json({ error: PENDING_MESSAGE });
     }
 
     const token = jwt.sign(

@@ -15,11 +15,15 @@ function GoogleIcon() {
 }
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const serverNotice = authError?.message && authError.message !== 'Authentication required'
+    ? authError.message
+    : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +75,12 @@ export default function LoginPage() {
           <p className="text-cyan-400/80 font-medium mt-1">Smart Education Platform</p>
           <p className="text-slate-500 text-sm mt-3">Login to access the school management dashboard</p>
         </div>
+
+        {serverNotice && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 text-sm text-amber-200 mb-4">
+            {serverNotice}
+          </div>
+        )}
 
         <button
           type="button"

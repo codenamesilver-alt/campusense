@@ -82,9 +82,10 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('OAuth callback failed:', err);
+      const serverMessage = err.response?.data?.error;
       setAuthError({
         type: 'auth_required',
-        message: 'Google sign-in failed. Try again.'
+        message: serverMessage || 'Google sign-in failed. Try again.'
       });
       if (typeof window !== 'undefined') {
         window.location.replace('/');
