@@ -55,7 +55,13 @@ const normalizeId = (data) => {
     return data.map(normalizeId);
   }
   if (data && typeof data === 'object' && 'id' in data) {
-    return parseJsonField({ ...data, id: String(data.id) });
+    const normalized = { ...data, id: String(data.id) };
+    Object.keys(normalized).forEach((key) => {
+      if (key.endsWith('_id') && key !== 'id' && normalized[key] != null) {
+        normalized[key] = String(normalized[key]);
+      }
+    });
+    return parseJsonField(normalized);
   }
   return data;
 };
