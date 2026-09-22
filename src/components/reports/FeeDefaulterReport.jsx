@@ -90,14 +90,24 @@ export default function FeeDefaulterReport() {
         return acc;
       }, {});
 
-      const report = Object.values(defaulterSummary).map(d => ({
-        ...d.student,
-        totalDue: d.totalDue,
-        lastDueDate: d.lastDueDate,
-        particulars: Array.from(d.particulars.entries())
-          .sort((a, b) => new Date(a[1] || 0) - new Date(b[1] || 0))
-          .map(e => e[0])
-      }));
+      const classRank = { PLAYGROUP: 0, NURSERY: 1, KG: 2, 'K.G': 2, K: 2 };
+      const classSort = (cls, section) => {
+        const key = String(cls || '').trim().toUpperCase().replace('.', '');
+        const base = Number.isInteger(Number(key)) ? Number(key) + 2 : (classRank[key] ?? 99);
+        const sec = String(section || '').trim().toUpperCase() || 'Z';
+        return base * 100 + (sec === 'A' ? 1 : sec === 'B' ? 2 : 99);
+      };
+
+      const report = Object.values(defaulterSummary)
+        .map(d => ({
+          ...d.student,
+          totalDue: d.totalDue,
+          lastDueDate: d.lastDueDate,
+          particulars: Array.from(d.particulars.entries())
+            .sort((a, b) => new Date(a[1] || 0) - new Date(b[1] || 0))
+            .map(e => e[0])
+        }))
+        .sort((a, b) => classSort(a.class, a.section) - classSort(b.class, b.section));
 
       setDefaulters(report);
     } catch (error) {
