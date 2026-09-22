@@ -44,7 +44,8 @@ const allNavigationItems = [
       { title: "Student House", url: createPageUrl("StudentHouse"), requiredPermission: "student:update" },
       { title: "Export Student", url: createPageUrl("ExportStudent"), requiredPermission: "student:read" },
       { title: "Import Student", url: createPageUrl("ImportStudent"), requiredPermission: "student:create" },
-      { title: "Transfer Student", url: createPageUrl("TransferStudent"), requiredPermission: "student:update" }
+      { title: "Transfer Student", url: createPageUrl("TransferStudent"), requiredPermission: "student:update" },
+      { title: "Disabled/Deleted", url: createPageUrl("DisabledDeletedStudent"), requiredPermission: "student:read" }
     ]
   },
   {

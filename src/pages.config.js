@@ -1,5 +1,6 @@
 import Dashboard from './pages/Dashboard';
 import StudentDetails from './pages/StudentDetails';
+import DisabledDeletedStudent from './pages/DisabledDeletedStudent';
 import AdmissionEnquiry from './pages/AdmissionEnquiry';
 import Complaints from './pages/Complaints';
 import StudentAdmission from './pages/StudentAdmission';
@@ -98,6 +99,7 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "Dashboard": Dashboard,
     "StudentDetails": StudentDetails,
+    "DisabledDeletedStudent": DisabledDeletedStudent,
     "AdmissionEnquiry": AdmissionEnquiry,
     "Complaints": Complaints,
     "StudentAdmission": StudentAdmission,
