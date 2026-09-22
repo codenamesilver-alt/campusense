@@ -33,6 +33,42 @@ export default function FeeDefaulterReport() {
         return d < today;
       };
 
+      const balanceCounts = new Map();
+      for (const due of dueData) {
+        const bal = Number(due.balance_amount);
+        const key = `${due.student_id}:${bal}`;
+        balanceCounts.set(key, (balanceCounts.get(key) || 0) + 1);
+      }
+
+      const tuitionAmount = (studentId) => {
+        let bestBal = null;
+        let bestCount = 0;
+        for (const [key, count] of balanceCounts) {
+          const [sid, bal] = key.split(':');
+          if (sid === String(studentId) && count > bestCount && count >= 2) {
+            bestCount = count;
+            bestBal = Number(bal);
+          }
+        }
+        return bestBal;
+      };
+
+      const feeLabel = (due) => {
+        if (due.fee_head_name) {
+          if (/admission/i.test(due.fee_head_name)) return 'Adm';
+          if (/annual/i.test(due.fee_head_name)) return 'Ann';
+          return format(new Date(due.due_date), 'MMM');
+        }
+        if (!due.due_date) return null;
+        const d = new Date(due.due_date);
+        const bal = Number(due.balance_amount);
+        const isApril = d.getMonth() === 3;
+        if (isApril && bal === 2000) return 'Adm';
+        const tuition = tuitionAmount(due.student_id);
+        if (isApril && tuition !== null && bal !== tuition) return 'Ann';
+        return format(d, 'MMM');
+      };
+
       const defaulterSummary = dueData.reduce((acc, due) => {
         const student = studentMap.get(due.student_id);
         if (!student) return acc;
@@ -47,7 +83,7 @@ export default function FeeDefaulterReport() {
         if (due.due_date && (!entry.lastDueDate || new Date(due.due_date) > new Date(entry.lastDueDate))) {
           entry.lastDueDate = due.due_date;
         }
-        const label = due.fee_head_name || (due.due_date ? format(new Date(due.due_date), 'MMMM yyyy') : null);
+        const label = feeLabel(due);
         if (label) {
           entry.particulars.set(label, due.due_date || '');
         }
