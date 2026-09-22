@@ -17,6 +17,7 @@ const RESOURCE_TABLE_MAP = {
   FeeHead: 'fee_heads',
   FeeDue: 'fee_dues',
   FeeTransaction: 'fee_transactions',
+  ApprovalRequest: 'approval_requests',
   ClassFeeStructure: 'class_fee_structures',
   StudentFeeMapping: 'student_fee_mappings',
   StudentDiscount: 'student_discounts',

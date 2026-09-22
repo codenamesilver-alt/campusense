@@ -47,7 +47,8 @@ const DEPENDENCY_ORDER = [
   'StudentFeeMapping',
   'FeeDue',
   'StudentDiscount',
-  'FeeTransaction'
+  'FeeTransaction',
+  'ApprovalRequest'
 ];
 
 const FK_REFS = {
@@ -58,7 +59,8 @@ const FK_REFS = {
   StudentFeeMapping: { student_id: 'Student', fee_head_id: 'FeeHead' },
   FeeDue: { student_id: 'Student', fee_head_id: 'FeeHead' },
   StudentDiscount: { student_id: 'Student' },
-  FeeTransaction: { student_id: 'Student' }
+  FeeTransaction: { student_id: 'Student' },
+  ApprovalRequest: { transaction_id: 'FeeTransaction', requested_by_user_id: 'User' }
 };
 
 async function currentMaxId(table) {

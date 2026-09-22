@@ -5,6 +5,7 @@ const crudRoutes = require('./routes/crud');
 const authRoutes = require('./routes/auth');
 const integrationRoutes = require('./routes/integrations');
 const functionRoutes = require('./routes/functions');
+const approvalRoutes = require('./routes/approvals');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/integrations/Core', integrationRoutes);
 app.use('/api/entities', crudRoutes);
 app.use('/api/functions', functionRoutes);
+app.use('/api/approvals', approvalRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
