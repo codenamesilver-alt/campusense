@@ -69,12 +69,12 @@ const AdminDashboard = () => {
         // Today's fee: completed transactions for today
         const todayFee = allFeeTransactions
           .filter(t => t.status === 'completed' && t.transaction_date === today)
-          .reduce((sum, t) => sum + (t.net_amount || 0), 0);
+          .reduce((sum, t) => sum + Number(t.net_amount || 0), 0);
 
         // Monthly fee: completed transactions within current month
         const monthFee = allFeeTransactions
           .filter(t => t.status === 'completed' && t.transaction_date >= monthStart && t.transaction_date <= monthEnd)
-          .reduce((sum, t) => sum + (t.net_amount || 0), 0);
+          .reduce((sum, t) => sum + Number(t.net_amount || 0), 0);
 
         setStats({
           totalStudents,
@@ -102,6 +102,13 @@ const AdminDashboard = () => {
     { title: "Attendance", dataKey: "todayAttendance", icon: UserCheck, neon: '#f59e0b', glow: 'rgba(245,158,11,0.3)', suffix: '%', label: 'TODAY' },
     { title: "Upcoming Exam", dataKey: "upcomingExam", icon: CalendarClock, neon: '#ff006e', glow: 'rgba(255,0,110,0.3)', label: 'EXAM' }
   ];
+
+  const formatValue = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value.toLocaleString('en-IN');
+    }
+    return value || 0;
+  };
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #0a0e1a 0%, #0d1b2a 50%, #0a0e1a 100%)' }}>
@@ -164,7 +171,7 @@ const AdminDashboard = () => {
             >
               <KeyMetricCard
                 title={card.title}
-                value={`${card.prefix || ''}${stats[card.dataKey] || 0}${card.suffix || ''}`}
+                value={`${card.prefix || ''}${formatValue(stats[card.dataKey])}${card.suffix || ''}`}
                 icon={card.icon}
                 neon={card.neon}
                 glow={card.glow}

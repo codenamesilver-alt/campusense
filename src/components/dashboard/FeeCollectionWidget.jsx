@@ -22,10 +22,10 @@ const FeeCollectionWidget = () => {
           fetchAll('FeeDue')
       ]);
 
-      const collectedTotal = transactions.reduce((sum, t) => sum + (t.net_amount || 0), 0);
+      const collectedTotal = transactions.reduce((sum, t) => sum + Number(t.net_amount || 0), 0);
       const pendingTotal = dueFees
         .filter(d => d.status === 'pending' || d.status === 'partially_paid' || d.status === 'overdue')
-        .reduce((sum, d) => sum + (d.balance_amount || 0), 0);
+        .reduce((sum, d) => sum + Number(d.balance_amount || 0), 0);
 
       setFeeData([
         { name: 'Collected', value: collectedTotal, fill: '#00ff88' },
