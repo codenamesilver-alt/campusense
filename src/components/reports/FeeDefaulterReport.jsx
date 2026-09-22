@@ -19,28 +19,50 @@ export default function FeeDefaulterReport() {
         FeeDue.filter({ status: 'pending' }),
         Student.filter({ status: 'active' })
       ]);
-      
+
       const studentMap = new Map(studentData.map(s => [s.id, s]));
-      
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const isOverdue = (dateStr) => {
+        if (!dateStr) return false;
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return false;
+        d.setHours(0, 0, 0, 0);
+        return d < today;
+      };
+
       const defaulterSummary = dueData.reduce((acc, due) => {
-        if (due.balance_amount > 0) {
-          if (!acc[due.student_id]) {
-            acc[due.student_id] = { student: studentMap.get(due.student_id), totalDue: 0, lastDueDate: '1970-01-01' };
-          }
-          acc[due.student_id].totalDue += due.balance_amount;
-          if (new Date(due.due_date) > new Date(acc[due.student_id].lastDueDate)) {
-              acc[due.student_id].lastDueDate = due.due_date;
-          }
+        const student = studentMap.get(due.student_id);
+        if (!student) return acc;
+        if (!(Number(due.balance_amount) > 0)) return acc;
+        if (!isOverdue(due.due_date)) return acc;
+
+        if (!acc[due.student_id]) {
+          acc[due.student_id] = { student, totalDue: 0, lastDueDate: null, particulars: new Map() };
+        }
+        const entry = acc[due.student_id];
+        entry.totalDue += Number(due.balance_amount);
+        if (due.due_date && (!entry.lastDueDate || new Date(due.due_date) > new Date(entry.lastDueDate))) {
+          entry.lastDueDate = due.due_date;
+        }
+        const label = due.fee_head_name || (due.due_date ? format(new Date(due.due_date), 'MMMM yyyy') : null);
+        if (label) {
+          entry.particulars.set(label, due.due_date || '');
         }
         return acc;
       }, {});
-      
-      const report = Object.values(defaulterSummary).filter(d => d.student).map(d => ({
+
+      const report = Object.values(defaulterSummary).map(d => ({
         ...d.student,
         totalDue: d.totalDue,
-        lastDueDate: d.lastDueDate
+        lastDueDate: d.lastDueDate,
+        particulars: Array.from(d.particulars.entries())
+          .sort((a, b) => new Date(a[1] || 0) - new Date(b[1] || 0))
+          .map(e => e[0])
       }));
-      
+
       setDefaulters(report);
     } catch (error) {
       console.error('Error generating report:', error);
@@ -60,13 +82,16 @@ export default function FeeDefaulterReport() {
     { key: 'section', label: 'Section' },
     { key: 'guardian_phone', label: 'Mobile' },
     { key: 'totalDue', label: 'Total Due Amount (₹)' },
+    { key: 'particulars', label: 'Particulars' },
     { key: 'lastDueDate', label: 'Last Due Date' },
   ];
-  
+
   const reportData = defaulters.map(s => ({
     ...s,
     name: `${s.first_name} ${s.last_name}`,
-    lastDueDate: format(new Date(s.lastDueDate), 'yyyy-MM-dd')
+    totalDue: `₹ ${Number(s.totalDue).toLocaleString('en-IN')}`,
+    particulars: s.particulars && s.particulars.length > 0 ? s.particulars.join(', ') : '-',
+    lastDueDate: s.lastDueDate ? format(new Date(s.lastDueDate), 'yyyy-MM-dd') : '-'
   }));
 
   return (
