@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../config/db');
 const { authenticate } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/rbac');
 
 const router = express.Router();
 
@@ -79,6 +80,38 @@ function getTable(resource) {
 }
 
 const columnCache = new Map();
+
+const ADMIN_WRITE_RESOURCES = new Set([
+  'users',
+  'role_permissions',
+  'school_settings'
+]);
+const APPROVAL_REQUEST_TABLE = 'approval_requests';
+const APPROVAL_AUDIT_FIELDS = ['status', 'reviewed_by', 'reviewed_at', 'admin_comment'];
+
+function requireCreateAdminForResource(resource) {
+  const table = RESOURCE_TABLE_MAP[resource];
+  if (ADMIN_WRITE_RESOURCES.has(table)) {
+    return requireAdmin;
+  }
+  return (req, res, next) => next();
+}
+
+function requireMutateAdminForResource(resource) {
+  const table = RESOURCE_TABLE_MAP[resource];
+  if (ADMIN_WRITE_RESOURCES.has(table) || table === APPROVAL_REQUEST_TABLE) {
+    return requireAdmin;
+  }
+  return (req, res, next) => next();
+}
+
+function forceApprovalAuditFields(table, data) {
+  if (table !== APPROVAL_REQUEST_TABLE) return;
+  data.status = 'pending';
+  delete data.reviewed_by;
+  delete data.reviewed_at;
+  delete data.admin_comment;
+}
 
 async function getColumns(table) {
   if (!columnCache.has(table)) {
@@ -212,7 +245,7 @@ router.get('/:resource/:id', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/:resource', authenticate, async (req, res, next) => {
+router.post('/:resource', authenticate, requireCreateAdminForResource, async (req, res, next) => {
   try {
     const table = getTable(req.params.resource);
     const data = { ...req.body };
@@ -225,6 +258,7 @@ router.post('/:resource', authenticate, async (req, res, next) => {
     const tableInfo = await db(table).columnInfo();
     stripUnknownColumns(data, tableInfo);
     normalizeUserData(table, data);
+    forceApprovalAuditFields(table, data);
     if (tableInfo.created_date && !data.created_date) {
       data.created_date = new Date();
     }
@@ -237,7 +271,7 @@ router.post('/:resource', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/:resource/bulk', authenticate, async (req, res, next) => {
+router.post('/:resource/bulk', authenticate, requireCreateAdminForResource, async (req, res, next) => {
   try {
     const table = getTable(req.params.resource);
     const records = Array.isArray(req.body) ? req.body : (req.body.records || []);
@@ -250,6 +284,7 @@ router.post('/:resource/bulk', authenticate, async (req, res, next) => {
       const out = { ...r };
       stripUnknownColumns(out, tableInfo);
       normalizeUserData(table, out);
+      forceApprovalAuditFields(table, out);
       if (tableInfo.created_date && !out.created_date) out.created_date = new Date();
       return out;
     });
@@ -262,7 +297,7 @@ router.post('/:resource/bulk', authenticate, async (req, res, next) => {
   }
 });
 
-router.patch('/:resource/:id', authenticate, async (req, res, next) => {
+router.patch('/:resource/:id', authenticate, requireMutateAdminForResource, async (req, res, next) => {
   try {
     const table = getTable(req.params.resource);
     const data = { ...req.body };
@@ -272,6 +307,19 @@ router.patch('/:resource/:id', authenticate, async (req, res, next) => {
     const tableInfo = await db(table).columnInfo();
     stripUnknownColumns(data, tableInfo);
     normalizeUserData(table, data);
+
+    if (table === APPROVAL_REQUEST_TABLE) {
+      forceApprovalAuditFields(table, data);
+      if (Object.keys(data).length === 0) {
+        return res.status(400).json({ error: 'No editable fields provided' });
+      }
+      // Audit fields are only writable via the approve/reject endpoints
+      delete data.status;
+      delete data.reviewed_by;
+      delete data.reviewed_at;
+      delete data.admin_comment;
+    }
+
     if (tableInfo.updated_date) {
       data.updated_date = new Date();
     }
@@ -285,7 +333,7 @@ router.patch('/:resource/:id', authenticate, async (req, res, next) => {
   }
 });
 
-router.put('/:resource/:id', authenticate, async (req, res, next) => {
+router.put('/:resource/:id', authenticate, requireMutateAdminForResource, async (req, res, next) => {
   try {
     const table = getTable(req.params.resource);
     const data = { ...req.body };
@@ -295,6 +343,14 @@ router.put('/:resource/:id', authenticate, async (req, res, next) => {
     const tableInfo = await db(table).columnInfo();
     stripUnknownColumns(data, tableInfo);
     normalizeUserData(table, data);
+
+    if (table === APPROVAL_REQUEST_TABLE) {
+      forceApprovalAuditFields(table, data);
+      delete data.status;
+      delete data.reviewed_by;
+      delete data.reviewed_at;
+      delete data.admin_comment;
+    }
     if (tableInfo.updated_date) {
       data.updated_date = new Date();
     }
@@ -308,7 +364,7 @@ router.put('/:resource/:id', authenticate, async (req, res, next) => {
   }
 });
 
-router.delete('/:resource/:id', authenticate, async (req, res, next) => {
+router.delete('/:resource/:id', authenticate, requireMutateAdminForResource, async (req, res, next) => {
   try {
     const table = getTable(req.params.resource);
     const count = await db(table).where({ id: req.params.id }).del();
