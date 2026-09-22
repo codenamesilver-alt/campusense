@@ -319,3 +319,4 @@ router.delete('/:resource/:id', authenticate, async (req, res, next) => {
 });
 
 module.exports = router;
+module.exports.RESOURCE_TABLE_MAP = RESOURCE_TABLE_MAP;

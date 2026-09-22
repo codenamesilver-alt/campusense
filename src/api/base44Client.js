@@ -195,14 +195,8 @@ const Core = {
 const functions = {
   async invoke(name, payload) {
     if (name === 'backupRestore') {
-      const { action, backup } = payload || {};
-      if (action === 'export') {
-        return { success: true, entities: {} };
-      }
-      if (action === 'import') {
-        return { success: true };
-      }
-      return { success: true };
+      const res = await api.post('/functions/backupRestore', payload || {});
+      return res.data;
     }
     if (name === 'calculateAttendanceInsights') {
       return { success: true, message: 'Stub' };
