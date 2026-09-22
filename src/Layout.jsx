@@ -205,6 +205,7 @@ const allNavigationItems = [
     requiredPermission: "settings:access",
     submenu: [
       { title: "General Settings", url: createPageUrl("GeneralSettings"), requiredPermission: "settings:general" },
+      { title: "Admin Approvals", url: createPageUrl("AdminApprovals"), requiredPermission: "settings:general" },
       { title: "Backup & Restore", url: createPageUrl("BackupAndRestore"), requiredPermission: "settings:general" },
       { title: "Report Card Settings", url: createPageUrl("ReportCardSettings"), requiredPermission: "settings:general" },
       { title: "Notification Settings", url: createPageUrl("NotificationSettings"), requiredPermission: "settings:notifications" },

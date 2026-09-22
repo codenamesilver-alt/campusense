@@ -7,6 +7,7 @@ import { Student } from "@/entities/Student";
 import { Staff } from "@/entities/Staff";
 import { FeeTransaction } from "@/entities/FeeTransaction";
 import { Complaint } from "@/entities/Complaint";
+import { ApprovalRequest } from "@/entities/ApprovalRequest";
 import { Attendance } from "@/entities/Attendance";
 import { ExamSchedule } from "@/entities/ExamSchedule";
 
@@ -22,7 +23,7 @@ import AttendanceRiskWidget from "../components/dashboard/AttendanceRiskWidget";
 import SchoolEventsWidget from "../components/dashboard/SchoolEventsWidget";
 import StudentQuickSearch from "../components/dashboard/StudentQuickSearch";
 
-import { Users, Briefcase, IndianRupee, MessageCircleWarning, UserCheck, CalendarClock } from 'lucide-react';
+import { Users, Briefcase, IndianRupee, MessageCircleWarning, UserCheck, CalendarClock, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AdminDashboard = () => {
@@ -33,7 +34,8 @@ const AdminDashboard = () => {
     monthFee: 0,
     openTickets: 0,
     todayAttendance: 0,
-    upcomingExam: "None"
+    upcomingExam: "None",
+    pendingApprovals: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [time, setTime] = useState(new Date());
@@ -55,13 +57,14 @@ const AdminDashboard = () => {
         const monthStart = `${yyyy}-${mm}-01`;
         const monthEnd = `${yyyy}-${mm}-${String(new Date(yyyy, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
 
-        const [students, staff, allFeeTransactions, complaints, attendance, examSchedules] = await Promise.all([
+        const [students, staff, allFeeTransactions, complaints, attendance, examSchedules, approvalRequests] = await Promise.all([
           Student.list(),
           Staff.list(),
           FeeTransaction.list('-transaction_date'),
           Complaint.filter({ status: 'open' }),
           Attendance.filter({ date: today }),
-          ExamSchedule.filter({ exam_date: { '$gte': today } }, 'exam_date', 1)
+          ExamSchedule.filter({ exam_date: { '$gte': today } }, 'exam_date', 1),
+          ApprovalRequest.filter({ status: 'pending' })
         ]);
         const totalStudents = students.length;
         const presentToday = attendance.filter(a => a.status === 'present').length;
@@ -83,7 +86,8 @@ const AdminDashboard = () => {
           monthFee,
           openTickets: complaints.length,
           todayAttendance: totalStudents > 0 ? ((presentToday / totalStudents) * 100).toFixed(0) : 0,
-          upcomingExam: examSchedules.length > 0 ? examSchedules[0].subject_name : "None"
+          upcomingExam: examSchedules.length > 0 ? examSchedules[0].subject_name : "None",
+          pendingApprovals: approvalRequests.length
         });
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -100,7 +104,8 @@ const AdminDashboard = () => {
     { title: "Today's Fees", dataKey: "todayFee", icon: IndianRupee, neon: '#00ff88', glow: 'rgba(0,255,136,0.3)', prefix: '₹', label: 'COLLECTED' },
     { title: "Total Fee", dataKey: "monthFee", icon: MessageCircleWarning, neon: '#ff6b35', glow: 'rgba(255,107,53,0.3)', prefix: '₹', label: 'THIS MONTH' },
     { title: "Attendance", dataKey: "todayAttendance", icon: UserCheck, neon: '#f59e0b', glow: 'rgba(245,158,11,0.3)', suffix: '%', label: 'TODAY' },
-    { title: "Upcoming Exam", dataKey: "upcomingExam", icon: CalendarClock, neon: '#ff006e', glow: 'rgba(255,0,110,0.3)', label: 'EXAM' }
+    { title: "Upcoming Exam", dataKey: "upcomingExam", icon: CalendarClock, neon: '#ff006e', glow: 'rgba(255,0,110,0.3)', label: 'EXAM' },
+    { title: "Pending Approvals", dataKey: "pendingApprovals", icon: ShieldCheck, neon: '#ff00e5', glow: 'rgba(255,0,229,0.3)', label: 'REQUESTS' }
   ];
 
   const formatValue = (value) => {
@@ -156,7 +161,7 @@ const AdminDashboard = () => {
 
         {/* Key Metrics */}
         <motion.div
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}

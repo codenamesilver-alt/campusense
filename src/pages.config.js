@@ -93,6 +93,7 @@ import ReportCard from './pages/ReportCard';
 import ReportCardSettings from './pages/ReportCardSettings';
 import ResultAnalysis from './pages/ResultAnalysis';
 import LeaveManagementSettings from './pages/LeaveManagementSettings';
+import AdminApprovals from './pages/AdminApprovals';
 import __Layout from './Layout.jsx';
 
 
@@ -192,6 +193,7 @@ export const PAGES = {
     "ReportCardSettings": ReportCardSettings,
     "ResultAnalysis": ResultAnalysis,
     "LeaveManagementSettings": LeaveManagementSettings,
+    "AdminApprovals": AdminApprovals,
 }
 
 export const pagesConfig = {

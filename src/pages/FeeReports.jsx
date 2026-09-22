@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { base44, apiClient } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Download, FileText, BarChart3, TrendingUp, IndianRupee, Users, Search, Receipt } from 'lucide-react';
+import { Download, FileText, BarChart3, TrendingUp, IndianRupee, Users, Search, Receipt, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchAll } from '@/lib/fetchAll';
 
@@ -40,7 +42,10 @@ export default function FeeReports() {
     paymentModeBreakdown: []
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [updatingMode, setUpdatingMode] = useState(null);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editReason, setEditReason] = useState('');
+  const [submittingRequest, setSubmittingRequest] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -161,19 +166,66 @@ export default function FeeReports() {
     });
   };
 
-  const handlePaymentModeChange = async (transaction, newMode) => {
-    if (newMode === transaction.payment_mode) return;
-    setUpdatingMode(transaction.id);
+  const openEditDialog = (transaction) => {
+    setEditingTransaction(transaction);
+    setEditForm({
+      total_amount: transaction.total_amount ?? '',
+      discount_amount: transaction.discount_amount ?? '',
+      payment_mode: transaction.payment_mode || 'cash',
+      transaction_date: (transaction.transaction_date || '').slice(0, 10)
+    });
+    setEditReason('');
+  };
+
+  const buildChanges = () => {
+    if (!editingTransaction) return [];
+    const changes = [];
+    const fields = [
+      { key: 'total_amount', label: 'Amount', numeric: true },
+      { key: 'discount_amount', label: 'Discount', numeric: true },
+      { key: 'payment_mode', label: 'Payment Mode', numeric: false },
+      { key: 'transaction_date', label: 'Date', numeric: false }
+    ];
+    for (const f of fields) {
+      const oldValue = editingTransaction[f.key];
+      let newValue = editForm[f.key];
+      if (f.numeric) {
+        newValue = newValue === '' || newValue == null ? 0 : Number(newValue);
+        const oldNumber = oldValue == null ? 0 : Number(oldValue);
+        if (oldNumber === newValue) continue;
+      } else {
+        if (String(oldValue ?? '') === String(newValue ?? '')) continue;
+      }
+      changes.push({ field: f.key, label: f.label, old_value: oldValue, new_value: newValue });
+    }
+    return changes;
+  };
+
+  const submitEditRequest = async () => {
+    if (!editingTransaction) return;
+    const changes = buildChanges();
+    if (changes.length === 0) {
+      alert('No changes made to this transaction.');
+      return;
+    }
+    if (!editReason.trim()) {
+      alert('Please provide a reason/comment for this change.');
+      return;
+    }
+    setSubmittingRequest(true);
     try {
-      await base44.entities.FeeTransaction.update(transaction.id, { payment_mode: newMode });
-      setTransactions(prev =>
-        prev.map(t => (t.id === transaction.id ? { ...t, payment_mode: newMode } : t))
-      );
+      await apiClient.post('/approvals', {
+        transaction_id: editingTransaction.id,
+        changes,
+        reason: editReason.trim()
+      });
+      alert('Change request submitted for admin approval.');
+      setEditingTransaction(null);
     } catch (error) {
-      console.error('Error updating payment mode:', error);
-      alert('Failed to update payment mode. Please try again.');
+      console.error('Error submitting approval request:', error);
+      alert(error.response?.data?.error || 'Failed to submit change request. Please try again.');
     } finally {
-      setUpdatingMode(null);
+      setSubmittingRequest(false);
     }
   };
 
@@ -810,12 +862,13 @@ export default function FeeReports() {
                       <TableHead>Amount</TableHead>
                       <TableHead>Discount</TableHead>
                       <TableHead>Net Amount</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filterTransactions().length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                           No transactions found for the selected filters
                         </TableCell>
                       </TableRow>
@@ -832,27 +885,22 @@ export default function FeeReports() {
                             <TableCell>
                               {student ? `${student.class}-${student.section}` : 'Unknown'}
                             </TableCell>
-                            <TableCell>
-                              <Select
-                                value={transaction.payment_mode}
-                                disabled={updatingMode === transaction.id}
-                                onValueChange={(value) => handlePaymentModeChange(transaction, value)}
-                              >
-                                <SelectTrigger className="w-28 h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="cash">Cash</SelectItem>
-                                  <SelectItem value="online">Online</SelectItem>
-                                  <SelectItem value="cheque">Cheque</SelectItem>
-                                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                                  <SelectItem value="card">Card</SelectItem>
-                                </SelectContent>
-                              </Select>
+                            <TableCell className="font-medium">
+                              {(transaction.payment_mode || 'N/A').toUpperCase()}
                             </TableCell>
                             <TableCell>₹{transaction.total_amount}</TableCell>
                             <TableCell className="text-green-600">₹{transaction.discount_amount || 0}</TableCell>
                             <TableCell className="font-medium">₹{transaction.net_amount}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8"
+                                onClick={() => openEditDialog(transaction)}
+                              >
+                                <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         );
                       })
@@ -864,6 +912,92 @@ export default function FeeReports() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Transaction Request Dialog */}
+      <Dialog open={!!editingTransaction} onOpenChange={(open) => { if (!open) setEditingTransaction(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Request Change to Fee Transaction</DialogTitle>
+          </DialogHeader>
+          {editingTransaction && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600">
+                <p><strong>Receipt:</strong> {editingTransaction.receipt_number}</p>
+                <p><strong>Date:</strong> {format(new Date(editingTransaction.transaction_date), 'MMM dd, yyyy')}</p>
+                <p><strong>Student:</strong> {(() => {
+                  const s = students.find(st => st.id === editingTransaction.student_id);
+                  return s ? `${s.first_name} ${s.last_name}` : 'Unknown';
+                })()}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Amount (₹)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.total_amount ?? ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, total_amount: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Discount (₹)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.discount_amount ?? ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, discount_amount: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Payment Mode</Label>
+                  <Select
+                    value={editForm.payment_mode}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, payment_mode: value }))}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={editForm.transaction_date ?? ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, transaction_date: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Reason for Change *</Label>
+                <Textarea
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  placeholder="Explain why this transaction needs to be changed"
+                  rows={3}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingTransaction(null)}>Cancel</Button>
+                <Button onClick={submitEditRequest} disabled={submittingRequest}>
+                  {submittingRequest ? 'Submitting...' : 'Submit for Approval'}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
