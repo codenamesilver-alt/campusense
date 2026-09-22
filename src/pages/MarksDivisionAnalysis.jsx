@@ -70,36 +70,39 @@ export default function MarksDivisionAnalysis() {
     const filters = { class: selectedClass, status: 'active' };
     if (selectedSection) filters.section = selectedSection;
 
-    const [students, allResults, allSchedules] = await Promise.all([
-      fetchAllFiltered('Student', filters),
-      fetchAllFiltered('ExamResult', { exam_group_id: selectedGroup }),
-      fetchAllFiltered('ExamSchedule', { exam_group_id: selectedGroup })
-    ]);
+    const students = await fetchAllFiltered('Student', filters);
 
-    if (students.length === 0 || allResults.length === 0 || allSchedules.length === 0) {
+    const allResults = await fetchAllFiltered('StudentResult', { exam_group_id: selectedGroup });
+    const markRows = allResults.filter(r => r.subject_id != null);
+    if (students.length === 0 || markRows.length === 0) {
       setAnalysisData([]);
       setStudentDetails([]);
       setLoading(false);
       return;
     }
 
-    const sortedDivisions = [...divisions].sort((a, b) => b.min_percentage - a.min_percentage);
+    const sortedDivisions = [...divisions]
+      .filter(d => d.min_percentage != null)
+      .sort((a, b) => b.min_percentage - a.min_percentage);
+
+    const markRowsByStudent = {};
+    markRows.forEach(r => {
+      if (!markRowsByStudent[r.student_id]) markRowsByStudent[r.student_id] = [];
+      markRowsByStudent[r.student_id].push(r);
+    });
 
     const studentDivisionDetails = students.map(student => {
-      const studentResults = allResults.filter(r => r.student_id === student.id);
-      const studentSchedules = allSchedules.filter(s => s.class === student.class && s.section === student.section);
-
+      const rows = markRowsByStudent[student.id] || [];
       let totalMarksObtained = 0;
       let totalMaxMarks = 0;
 
-      studentSchedules.forEach(sch => {
-        const result = studentResults.find(r => r.exam_schedule_id === sch.id);
-        totalMarksObtained += result?.marks_obtained ?? 0;
-        totalMaxMarks += sch.max_marks ?? 100;
+      rows.forEach(r => {
+        totalMarksObtained += Number(r.marks_obtained) || 0;
+        totalMaxMarks += Number(r.max_marks) || 100;
       });
 
       const percentage = totalMaxMarks > 0 ? (totalMarksObtained / totalMaxMarks) * 100 : 0;
-      const division = sortedDivisions.find(d => percentage >= d.min_percentage)?.division_name || 'Fail';
+      const division = sortedDivisions.find(d => percentage >= d.min_percentage)?.name || 'Fail';
 
       return { ...student, percentage, division };
     });
@@ -107,7 +110,7 @@ export default function MarksDivisionAnalysis() {
     setStudentDetails(studentDivisionDetails);
 
     // Aggregate for charts
-    const divisionCounts = sortedDivisions.map(d => ({ name: d.division_name, value: 0 }));
+    const divisionCounts = sortedDivisions.map(d => ({ name: d.name, value: 0 }));
     divisionCounts.push({ name: 'Fail', value: 0 });
 
     studentDivisionDetails.forEach(s => {

@@ -166,7 +166,7 @@ export default function ClassTimetable() {
     if (!classObj) return [];
 
     // Find subject group for this class
-    const subjectGroup = subjectGroups.find(sg => sg.class_id === selectedClass);
+    const subjectGroup = subjectGroups.find(sg => sg.class_name === classObj.name);
     if (!subjectGroup || !subjectGroup.subject_ids) return subjects;
 
     // Return subjects in this group
@@ -251,10 +251,10 @@ Generate for all ${days.length} days and ${periods.length} periods per day.`;
       for (const entry of timetableData) {
         const subject = classSubjects.find(s => s.name.toLowerCase() === entry.subject.toLowerCase());
         const period = periods.find(p => p.period_number === entry.period);
+        const randomTeacher = teachers.length > 0 ? teachers[Math.floor(Math.random() * teachers.length)] : null;
         
-        if (subject && period) {
+        if (subject && period && randomTeacher) {
           // Assign a random teacher for now (can be edited later)
-          const randomTeacher = teachers[Math.floor(Math.random() * teachers.length)];
           
           await base44.entities.Timetable.create({
             class_id: selectedClass,
@@ -264,7 +264,7 @@ Generate for all ${days.length} days and ${periods.length} periods per day.`;
             start_time: period.start_time,
             end_time: period.end_time,
             subject_id: subject.id,
-            teacher_id: randomTeacher?.id || ''
+            teacher_id: randomTeacher.id
           });
         }
       }

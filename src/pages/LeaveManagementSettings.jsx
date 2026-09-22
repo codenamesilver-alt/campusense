@@ -8,7 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { Save, Users } from 'lucide-react';
 
 const DEFAULT_POLICY = {
-  id: null,
   paid_leave_days: 12,
   sick_leave_days: 12,
   casual_leave_days: 12,
@@ -25,6 +24,13 @@ const DEFAULT_POLICY = {
   notes: ''
 };
 
+const LEAVE_TYPE_CONFIGS = [
+  { type: 'paid', daysField: 'paid_leave_days', carryField: 'carry_forward_paid_leave', idField: 'paidPolicyId' },
+  { type: 'sick', daysField: 'sick_leave_days', carryField: 'carry_forward_sick_leave', idField: 'sickPolicyId' },
+  { type: 'casual', daysField: 'casual_leave_days', carryField: 'carry_forward_casual_leave', idField: 'casualPolicyId' },
+  { type: 'maternity', daysField: 'maternity_leave_days', carryField: null, idField: 'maternityPolicyId' },
+];
+
 export default function LeaveManagementSettings() {
   const [policy, setPolicy] = useState(DEFAULT_POLICY);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,7 +44,16 @@ export default function LeaveManagementSettings() {
 
   const loadPolicy = async () => {
     const data = await base44.entities.LeaveManagementPolicy.list();
-    if (data.length > 0) setPolicy({ ...DEFAULT_POLICY, ...data[0] });
+    const updates = { ...DEFAULT_POLICY };
+    for (const cfg of LEAVE_TYPE_CONFIGS) {
+      const row = data.find(r => r.leave_type === cfg.type);
+      if (!row) continue;
+      updates[cfg.daysField] = row.allowance_days ?? updates[cfg.daysField];
+      if (cfg.carryField) updates[cfg.carryField] = !!row.carry_forward;
+      updates[cfg.idField] = row.id;
+      if (row.description) updates.notes = row.description;
+    }
+    setPolicy(updates);
   };
 
   const handleChange = (field, value) => {
@@ -48,11 +63,20 @@ export default function LeaveManagementSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      if (policy.id) {
-        await base44.entities.LeaveManagementPolicy.update(policy.id, policy);
-      } else {
-        const created = await base44.entities.LeaveManagementPolicy.create(policy);
-        setPolicy(prev => ({ ...prev, id: created.id }));
+      for (const cfg of LEAVE_TYPE_CONFIGS) {
+        const payload = {
+          name: `${cfg.type} policy`,
+          leave_type: cfg.type,
+          allowance_days: policy[cfg.daysField] || 0,
+          carry_forward: cfg.carryField ? !!policy[cfg.carryField] : false,
+          description: policy.notes || ''
+        };
+        if (policy[cfg.idField]) {
+          await base44.entities.LeaveManagementPolicy.update(policy[cfg.idField], payload);
+        } else {
+          const created = await base44.entities.LeaveManagementPolicy.create(payload);
+          setPolicy(prev => ({ ...prev, [cfg.idField]: created.id }));
+        }
       }
       alert('Leave policy saved successfully!');
     } finally {

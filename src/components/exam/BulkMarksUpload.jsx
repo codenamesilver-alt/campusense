@@ -24,10 +24,10 @@ const CO_ITEMS = [
 ];
 
 // Column field keys
-const FIELD_PRE_TEST_1 = 'preTest_hy';   // scholastic_marks[subject].perTest
-const FIELD_HALF_YEARLY = 'halfYearly';   // scholastic_marks[subject].halfYearly
-const FIELD_PRE_TEST_2 = 'preTest_ann';   // annual_marks[subject].perTest
-const FIELD_ANNUAL = 'annual';            // annual_marks[subject].annual
+const FIELD_PRE_TEST_1 = 'preTest_hy';   // splits[subject].perTest (HY mode)
+const FIELD_HALF_YEARLY = 'halfYearly';   // splits[subject].halfYearly
+const FIELD_PRE_TEST_2 = 'preTest_ann';   // annualSplits[subject].perTest
+const FIELD_ANNUAL = 'annual';            // annualSplits[subject].annual
 
 // Determine exam mode from exam_type string
 const getExamMode = (examType) => {
@@ -236,8 +236,17 @@ export default function BulkMarksUpload({ students, subjects, examGroupId, examG
       const existingResults = await fetchAllFiltered('StudentResult', {
         exam_group_id: examGroupId, class: selectedClass, section: selectedSection
       });
-      const resultMap = {};
-      existingResults.forEach(r => { resultMap[r.student_id] = r; });
+
+      const byStudent = {};
+      existingResults.forEach(r => {
+        const b = byStudent[r.student_id] = byStudent[r.student_id] || { metaRow: null, meta: null, markRows: new Map() };
+        if (r.subject_id == null) {
+          b.metaRow = r;
+          try { b.meta = r.remarks ? JSON.parse(r.remarks) : null; } catch (e) { b.meta = null; }
+        } else {
+          b.markRows.set(String(r.subject_id), r);
+        }
+      });
 
       let success = 0, failed = 0;
       const errors = [];
@@ -248,12 +257,15 @@ export default function BulkMarksUpload({ students, subjects, examGroupId, examG
         const student = students.find(s => s.admission_number === admNo);
         if (!student) { failed++; errors.push(`Row ${row[0]}: Student not found`); continue; }
 
-        const existing = resultMap[student.id];
-        const scholastic = existing?.scholastic_marks || {};
-        const annual = existing?.annual_marks || {};
+        const b = byStudent[student.id] || { metaRow: null, meta: null, markRows: new Map() };
+        const meta = b.meta ? { ...b.meta } : {};
+        const scholastic = { ...(meta.splits || {}) };
+        const annual = { ...(meta.annualSplits || {}) };
 
+        const touchedSubjectIds = new Set();
         colMap.forEach((map, idx) => {
           if (!map) return;
+          touchedSubjectIds.add(String(map.subjectId));
           applyMark(map.subjectId, map.field, row[idx]?.trim(), scholastic, annual, maxTotal);
         });
 
@@ -261,32 +273,80 @@ export default function BulkMarksUpload({ students, subjects, examGroupId, examG
         const daysPresent = presentIdx >= 0 ? (parseFloat(row[presentIdx]) || 0) : 0;
         const rem = remIdx >= 0 ? (row[remIdx] || '') : '';
 
-        const resultData = {
+        const attendance = { ...(meta.attendance || {}) };
+        const annualAttendance = { ...(meta.annualAttendance || {}) };
+        if (mode === 'halfYearly') {
+          if (totalDays) attendance.totalDays = totalDays;
+          if (daysPresent) attendance.daysPresent = daysPresent;
+          if (rem) meta.teacherRemarks = rem;
+        } else if (mode === 'annual') {
+          if (totalDays) annualAttendance.totalDays = totalDays;
+          if (daysPresent) annualAttendance.daysPresent = daysPresent;
+          if (rem) meta.annualTeacherRemarks = rem;
+        }
+        meta.splits = scholastic;
+        meta.annualSplits = annual;
+        meta.attendance = attendance;
+        meta.annualAttendance = annualAttendance;
+        meta.maxMarksPerTest = maxMarksPerTest;
+        meta.maxMarksHalfYearly = maxMarksHalfYearly;
+
+        const basePayload = {
           student_id: student.id,
+          student_name: `${student.first_name} ${student.last_name || ''}`.trim(),
           exam_group_id: examGroupId,
+          exam_group_name: examGroup?.name || '',
           class: selectedClass,
           section: selectedSection,
           academic_session: currentSession,
-          scholastic_marks: scholastic,
-          annual_marks: annual,
-          max_marks_per_test: maxMarksPerTest,
-          max_marks_half_yearly: maxMarksHalfYearly,
-          co_scholastic: existing?.co_scholastic || {},
-          annual_co_scholastic: existing?.annual_co_scholastic || {},
-          total_days: mode === 'halfYearly' ? (totalDays || existing?.total_days || 0) : (existing?.total_days || 0),
-          days_present: mode === 'halfYearly' ? (daysPresent || existing?.days_present || 0) : (existing?.days_present || 0),
-          attendance_percentage: mode === 'halfYearly' && totalDays > 0 ? Math.round((daysPresent / totalDays) * 100) : (existing?.attendance_percentage || 0),
-          annual_total_days: mode === 'annual' ? (totalDays || existing?.annual_total_days || 0) : (existing?.annual_total_days || 0),
-          annual_days_present: mode === 'annual' ? (daysPresent || existing?.annual_days_present || 0) : (existing?.annual_days_present || 0),
-          annual_attendance_percentage: mode === 'annual' && totalDays > 0 ? Math.round((daysPresent / totalDays) * 100) : (existing?.annual_attendance_percentage || 0),
-          teacher_remarks: mode === 'halfYearly' ? (rem || existing?.teacher_remarks || '') : (existing?.teacher_remarks || ''),
-          annual_teacher_remarks: mode === 'annual' ? (rem || existing?.annual_teacher_remarks || '') : (existing?.annual_teacher_remarks || ''),
           status: 'saved'
         };
 
         try {
-          if (existing) await base44.entities.StudentResult.update(existing.id, resultData);
-          else await base44.entities.StudentResult.create(resultData);
+          const termObject = mode === 'annual' || mode === 'preTest2' ? annual : scholastic;
+          for (const sid of touchedSubjectIds) {
+            const src = termObject[sid];
+            if (!src) continue;
+            const total = parseFloat(src.total) || 0;
+            const entered = parseFloat(src.perTest) || 0;
+            const main = parseFloat(src.halfYearly != null && src.halfYearly !== '' ? src.halfYearly : src.annual) || 0;
+            if (total <= 0 && entered <= 0 && main <= 0) continue;
+            const subject = subjects.find(s => String(s.id) === sid);
+            const payload = {
+              ...basePayload,
+              subject_id: subject ? subject.id : sid,
+              subject_name: subject?.name || '',
+              max_marks: maxTotal,
+              marks_obtained: total,
+              percentage: total > 0 ? Math.min(100, Math.round((total / maxTotal) * 100)) : 0,
+              grade: src.grade || (total > 0 ? calculateGrade((total / maxTotal) * 100) : '')
+            };
+            const existingMarkRow = b.markRows.get(sid);
+            if (existingMarkRow) {
+              await base44.entities.StudentResult.update(existingMarkRow.id, payload);
+            } else {
+              const created = await base44.entities.StudentResult.create(payload);
+              b.markRows.set(sid, created);
+            }
+          }
+
+          const metaPayload = {
+            ...basePayload,
+            subject_id: null,
+            subject_name: 'EXAM_META',
+            max_marks: null,
+            marks_obtained: null,
+            percentage: null,
+            grade: null,
+            remarks: JSON.stringify(meta)
+          };
+          if (b.metaRow) {
+            await base44.entities.StudentResult.update(b.metaRow.id, metaPayload);
+          } else {
+            const createdMeta = await base44.entities.StudentResult.create(metaPayload);
+            b.metaRow = createdMeta;
+          }
+          byStudent[student.id] = b;
           success++;
         } catch (e) {
           failed++;
@@ -319,8 +379,13 @@ export default function BulkMarksUpload({ students, subjects, examGroupId, examG
       const existingResults = await fetchAllFiltered('StudentResult', {
         exam_group_id: examGroupId, class: selectedClass, section: selectedSection
       });
-      const resultMap = {};
-      existingResults.forEach(r => { resultMap[r.student_id] = r; });
+
+      const byStudent = {};
+      existingResults.forEach(r => {
+        if (r.subject_id != null) return;
+        const b = byStudent[r.student_id] = byStudent[r.student_id] || { metaRow: r, meta: null };
+        try { b.meta = r.remarks ? JSON.parse(r.remarks) : null; } catch (e) { b.meta = null; }
+      });
 
       let success = 0, failed = 0;
       const errors = [];
@@ -330,9 +395,10 @@ export default function BulkMarksUpload({ students, subjects, examGroupId, examG
         const student = students.find(s => s.admission_number === admNo);
         if (!student) { failed++; errors.push(`Row ${row[0]}: Student not found`); continue; }
 
-        const existing = resultMap[student.id];
-        const co = existing?.co_scholastic || {};
-        const annCo = existing?.annual_co_scholastic || {};
+        const b = byStudent[student.id] || { metaRow: null, meta: null };
+        const meta = b.meta ? { ...b.meta } : {};
+        const co = { ...(meta.coScholastic || {}) };
+        const annCo = { ...(meta.annualCoScholastic || {}) };
 
         colMap.forEach((map, idx) => {
           if (!map) return;
@@ -346,32 +412,37 @@ export default function BulkMarksUpload({ students, subjects, examGroupId, examG
         });
 
         const rem = remIdx >= 0 ? (row[remIdx] || '') : '';
-        const resultData = {
+        if (mode === 'halfYearly' && rem) meta.teacherRemarks = rem;
+        if (mode === 'annual' && rem) meta.annualTeacherRemarks = rem;
+        meta.coScholastic = co;
+        meta.annualCoScholastic = annCo;
+        meta.maxMarksPerTest = maxMarksPerTest;
+        meta.maxMarksHalfYearly = maxMarksHalfYearly;
+
+        const metaPayload = {
           student_id: student.id,
+          student_name: `${student.first_name} ${student.last_name || ''}`.trim(),
           exam_group_id: examGroupId,
+          exam_group_name: examGroup?.name || '',
           class: selectedClass,
           section: selectedSection,
           academic_session: currentSession,
-          scholastic_marks: existing?.scholastic_marks || {},
-          annual_marks: existing?.annual_marks || {},
-          max_marks_per_test: existing?.max_marks_per_test || maxMarksPerTest,
-          max_marks_half_yearly: existing?.max_marks_half_yearly || maxMarksHalfYearly,
-          co_scholastic: co,
-          annual_co_scholastic: annCo,
-          total_days: existing?.total_days || 0,
-          days_present: existing?.days_present || 0,
-          attendance_percentage: existing?.attendance_percentage || 0,
-          annual_total_days: existing?.annual_total_days || 0,
-          annual_days_present: existing?.annual_days_present || 0,
-          annual_attendance_percentage: existing?.annual_attendance_percentage || 0,
-          teacher_remarks: mode === 'halfYearly' ? (rem || existing?.teacher_remarks || '') : (existing?.teacher_remarks || ''),
-          annual_teacher_remarks: mode === 'annual' ? (rem || existing?.annual_teacher_remarks || '') : (existing?.annual_teacher_remarks || ''),
+          subject_id: null,
+          subject_name: 'EXAM_META',
+          max_marks: null,
+          marks_obtained: null,
+          percentage: null,
+          grade: null,
+          remarks: JSON.stringify(meta),
           status: 'saved'
         };
 
         try {
-          if (existing) await base44.entities.StudentResult.update(existing.id, resultData);
-          else await base44.entities.StudentResult.create(resultData);
+          if (b.metaRow) {
+            await base44.entities.StudentResult.update(b.metaRow.id, metaPayload);
+          } else {
+            await base44.entities.StudentResult.create(metaPayload);
+          }
           success++;
         } catch (e) {
           failed++;

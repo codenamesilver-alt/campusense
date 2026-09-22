@@ -9,70 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Save, GraduationCap, User, Calendar, BookOpen, Award, Users, Sparkles } from 'lucide-react';
+import { Save, GraduationCap, User, BookOpen, Users, Sparkles, Calendar, Award } from 'lucide-react';
 import BulkMarksUpload from '@/components/exam/BulkMarksUpload';
 import RemarksWriterPanel from '@/components/exam/RemarksWriterPanel';
-
-// Co-Scholastic Areas Configuration matching the PDF
-const CO_SCHOLASTIC_CONFIG = {
-  academic_evaluation: {
-    title: 'Academic Evaluation',
-    items: [
-      'Is self-motivated',
-      'Complete task',
-      'Has the initiative to work independently',
-      'Participation in group activity',
-      'Class work presentation'
-    ]
-  },
-  self_awareness: {
-    title: 'Self-Awareness',
-    items: [
-      'Recognizes and names own feelings',
-      'Demonstrates growing confidence in sharing ideas',
-      'Shows pride in accomplishments and efforts'
-    ]
-  },
-  self_management: {
-    title: 'Self-Management',
-    items: [
-      'Manages emotions appropriately in different situations',
-      'Demonstrates perseverance in completing tasks',
-      'Use strategies to stays calm and focused during challenges'
-    ]
-  },
-  social_awareness: {
-    title: 'Social Awareness',
-    items: [
-      'Shows respect and empathy towards peer',
-      'Listens attentively to other\'s prospectives',
-      'Demonstrates kindness and inclusivity in group settings'
-    ]
-  },
-  relationship_skills: {
-    title: 'Relationship Skills',
-    items: [
-      'Cooperates well with peers during group activities',
-      'Resolves conflicts with minimal guidance',
-      'Communicates ideas clearly and respectifully'
-    ]
-  },
-  health_hygiene: {
-    title: 'Health & Hygiene',
-    items: [
-      'Personal Cleanliness',
-      'Healthy Habits',
-      'Nutrition Awareness',
-      'Physical Fitness',
-      'Posture & Presentation',
-      'Care of Surroundings'
-    ]
-  },
-  other: {
-    title: 'Other',
-    items: ['Visual Arts', 'General Awareness']
-  }
-};
 
 export default function MarksEntry() {
   const [classes, setClasses] = useState([]);
@@ -94,16 +33,33 @@ export default function MarksEntry() {
   
   const [scholasticMarks, setScholasticMarks] = useState({});
   const [annualMarks, setAnnualMarks] = useState({});
-  const [coScholasticGrades, setCoScholasticGrades] = useState({});
-  const [annualCoScholasticGrades, setAnnualCoScholasticGrades] = useState({});
-  const [attendanceData, setAttendanceData] = useState({ totalDays: '', daysPresent: '' });
-  const [annualAttendanceData, setAnnualAttendanceData] = useState({ totalDays: '', daysPresent: '' });
   const [teacherRemarks, setTeacherRemarks] = useState('');
   const [annualTeacherRemarks, setAnnualTeacherRemarks] = useState('');
+
+  const [attendanceData, setAttendanceData] = useState({ totalDays: '', daysPresent: '' });
+  const [annualAttendanceData, setAnnualAttendanceData] = useState({ totalDays: '', daysPresent: '' });
+  const [coScholasticGrades, setCoScholasticGrades] = useState({});
+  const [annualCoScholasticGrades, setAnnualCoScholasticGrades] = useState({});
   
   const [currentSession, setCurrentSession] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Co-scholastic areas with HY + Annual columns
+  const CO_SCHOLASTIC_CONFIG = {
+    workEducation: {
+      title: 'Work Education',
+      items: ['Work Education']
+    },
+    artEducation: {
+      title: 'Art Education (Visual & Performing)',
+      items: ['Visual Arts', 'Performing Arts']
+    },
+    healthPhysicalEducation: {
+      title: 'Health & Physical Education',
+      items: ['Health & Physical Education', 'Discipline']
+    }
+  };
 
   // Subject grouping configuration for class 6+
   const SUBJECT_GROUPS = {
@@ -165,11 +121,11 @@ export default function MarksEntry() {
 
   const loadSubjectsForClass = async () => {
     try {
-      const subjectGroups = await base44.entities.SubjectGroup.filter({ class_id: selectedClassId });
+      const subjectGroups = await base44.entities.SubjectGroup.filter({ class_name: selectedClass });
       if (subjectGroups.length > 0) {
-        const subjectIds = subjectGroups[0].subject_ids || [];
+        const subjectIds = (subjectGroups[0].subject_ids || []).map(id => String(id));
         const allSubjects = await base44.entities.Subject.list();
-        const classSubjects = allSubjects.filter(s => subjectIds.includes(s.id));
+        const classSubjects = allSubjects.filter(s => subjectIds.includes(String(s.id)));
         setSubjects(classSubjects);
       } else {
         setSubjects([]);
@@ -203,18 +159,42 @@ export default function MarksEntry() {
         exam_group_id: selectedExamGroup
       });
 
-      if (existingResults.length > 0) {
-        const result = existingResults[0];
-        setScholasticMarks(result.scholastic_marks || {});
-        setAnnualMarks(result.annual_marks || {});
-        setCoScholasticGrades(result.co_scholastic || {});
-        setAnnualCoScholasticGrades(result.annual_co_scholastic || {});
-        setAttendanceData({ totalDays: result.total_days || '', daysPresent: result.days_present || '' });
-        setAnnualAttendanceData({ totalDays: result.annual_total_days || '', daysPresent: result.annual_days_present || '' });
-        setTeacherRemarks(result.teacher_remarks || '');
-        setAnnualTeacherRemarks(result.annual_teacher_remarks || '');
-        if (result.max_marks_per_test) setMaxMarksPerTest(result.max_marks_per_test);
-        if (result.max_marks_half_yearly) setMaxMarksHalfYearly(result.max_marks_half_yearly);
+      const isAnnual = getCurrentMode() === 'annual';
+      const metaRows = [];
+      const markRows = [];
+
+      existingResults.forEach((r) => {
+        if (r.subject_id == null) {
+          metaRows.push(r);
+        } else {
+          markRows.push(r);
+        }
+      });
+
+      const parseMeta = () => {
+        if (metaRows.length === 0) return null;
+        try {
+          return JSON.parse(metaRows[0].remarks || 'null');
+        } catch (err) {
+          return null;
+        }
+      };
+
+      if (markRows.length > 0) {
+        const termMarks = {};
+        markRows.forEach((r) => {
+          termMarks[String(r.subject_id)] = {
+            perTest: '',
+            [isAnnual ? 'annual' : 'halfYearly']: '',
+            total: Number(r.marks_obtained) || 0,
+            grade: r.grade || ''
+          };
+        });
+        if (isAnnual) {
+          setAnnualMarks(termMarks);
+        } else {
+          setScholasticMarks(termMarks);
+        }
       } else {
         const emptyMarks = {};
         subjects.forEach(s => {
@@ -222,10 +202,19 @@ export default function MarksEntry() {
         });
         setScholasticMarks(emptyMarks);
         setAnnualMarks({});
-        setCoScholasticGrades({});
-        setAnnualCoScholasticGrades({});
-        setAttendanceData({ totalDays: '', daysPresent: '' });
-        setAnnualAttendanceData({ totalDays: '', daysPresent: '' });
+      }
+
+      const meta = parseMeta();
+      if (meta) {
+        if (meta.splits) setScholasticMarks(meta.splits);
+        if (meta.annualSplits) setAnnualMarks(meta.annualSplits);
+        if (meta.attendance) setAttendanceData(meta.attendance);
+        if (meta.annualAttendance) setAnnualAttendanceData(meta.annualAttendance);
+        if (meta.coScholastic) setCoScholasticGrades(meta.coScholastic);
+        if (meta.annualCoScholastic) setAnnualCoScholasticGrades(meta.annualCoScholastic);
+        if (meta.teacherRemarks != null) setTeacherRemarks(meta.teacherRemarks);
+        if (meta.annualTeacherRemarks != null) setAnnualTeacherRemarks(meta.annualTeacherRemarks);
+      } else {
         setTeacherRemarks('');
         setAnnualTeacherRemarks('');
       }
@@ -247,6 +236,11 @@ export default function MarksEntry() {
     setSelectedStudent(student);
   };
 
+  const getCurrentMode = () => {
+    const examGroup = examGroups.find((e) => e.id === selectedExamGroup);
+    return /annual/i.test(examGroup?.name || examGroup?.exam_type || '') ? 'annual' : 'halfYearly';
+  };
+
   const handleMarksChange = (subjectId, field, value, isAnnual = false) => {
     const setter = isAnnual ? setAnnualMarks : setScholasticMarks;
     const mainField = isAnnual ? 'annual' : 'halfYearly';
@@ -266,7 +260,7 @@ export default function MarksEntry() {
 
   const handleCoScholasticChange = (item, value, isAnnual = false) => {
     const setter = isAnnual ? setAnnualCoScholasticGrades : setCoScholasticGrades;
-    setter(prev => ({ ...prev, [item]: value.toUpperCase() }));
+    setter(prev => ({ ...prev, [item]: value }));
   };
 
   const calculateGrade = (percentage) => {
@@ -469,34 +463,93 @@ export default function MarksEntry() {
         exam_group_id: selectedExamGroup
       });
 
-      const calcPct = (present, total) => total > 0 ? Math.round((present / total) * 100) : 0;
-      const resultData = {
+      const isAnnual = getCurrentMode() === 'annual';
+      const marksMap = isAnnual ? annualMarks : scholasticMarks;
+      const mainField = isAnnual ? 'annual' : 'halfYearly';
+      const maxTotal = maxMarksPerTest + maxMarksHalfYearly;
+      const examGroup = examGroups.find((e) => e.id === selectedExamGroup);
+      const studentName = `${selectedStudent.first_name || ''} ${selectedStudent.last_name || ''}`.trim();
+
+      // Resubmit any negative splits that were previously saved
+      const existingBySubject = new Map();
+      let metaRow = null;
+      existingResults.forEach((r) => {
+        if (r.subject_id == null) metaRow = r;
+        else existingBySubject.set(String(r.subject_id), r);
+      });
+
+      const basePayload = {
         student_id: selectedStudent.id,
+        student_name: studentName,
         exam_group_id: selectedExamGroup,
+        exam_group_name: examGroup?.name || '',
         class: selectedClass,
         section: selectedSection,
         academic_session: currentSession,
-        scholastic_marks: scholasticMarks,
-        annual_marks: annualMarks,
-        max_marks_per_test: maxMarksPerTest,
-        max_marks_half_yearly: maxMarksHalfYearly,
-        co_scholastic: coScholasticGrades,
-        annual_co_scholastic: annualCoScholasticGrades,
-        total_days: parseFloat(attendanceData.totalDays) || 0,
-        days_present: parseFloat(attendanceData.daysPresent) || 0,
-        attendance_percentage: calcPct(parseFloat(attendanceData.daysPresent), parseFloat(attendanceData.totalDays)),
-        annual_total_days: parseFloat(annualAttendanceData.totalDays) || 0,
-        annual_days_present: parseFloat(annualAttendanceData.daysPresent) || 0,
-        annual_attendance_percentage: calcPct(parseFloat(annualAttendanceData.daysPresent), parseFloat(annualAttendanceData.totalDays)),
-        teacher_remarks: teacherRemarks,
-        annual_teacher_remarks: annualTeacherRemarks,
         status: 'saved'
       };
 
-      if (existingResults.length > 0) {
-        await base44.entities.StudentResult.update(existingResults[0].id, resultData);
+      const subjectsToSave = subjects.filter((s) => {
+        const m = marksMap[s.id] || {};
+        const entered = parseFloat(m.perTest) || 0;
+        const main = parseFloat(m[mainField]) || 0;
+        const total = parseFloat(m.total) || 0;
+        return entered > 0 || main > 0 || total > 0;
+      });
+
+      const handled = new Set();
+      for (const s of subjectsToSave) {
+        const entry = marksMap[s.id] || { perTest: '', [mainField]: '', total: 0, grade: '' };
+        const total = parseFloat(entry.total) || (parseFloat(entry.perTest) || 0) + (parseFloat(entry[mainField]) || 0);
+        const payload = {
+          ...basePayload,
+          subject_id: s.id,
+          subject_name: s.name,
+          max_marks: maxTotal,
+          marks_obtained: total,
+          percentage: total > 0 ? Math.min(100, Math.round((total / maxTotal) * 100)) : 0,
+          grade: entry.grade || (total > 0 ? calculateGrade((total / maxTotal) * 100) : '')
+        };
+        const row = existingBySubject.get(String(s.id));
+        if (row) {
+          await base44.entities.StudentResult.update(row.id, payload);
+        } else {
+          await base44.entities.StudentResult.create(payload);
+        }
+        handled.add(String(s.id));
+      }
+
+      // Remove persisted rows for subjects that now have no marks
+      for (const [subjectId, row] of existingBySubject.entries()) {
+        if (!handled.has(subjectId)) {
+          await base44.entities.StudentResult.delete(row.id);
+        }
+      }
+
+      const metaPayload = {
+        ...basePayload,
+        subject_id: null,
+        subject_name: 'EXAM_META',
+        max_marks: null,
+        marks_obtained: null,
+        percentage: null,
+        grade: null,
+        remarks: JSON.stringify({
+          splits: scholasticMarks,
+          annualSplits: annualMarks,
+          attendance: attendanceData,
+          annualAttendance: annualAttendanceData,
+          coScholastic: coScholasticGrades,
+          annualCoScholastic: annualCoScholasticGrades,
+          teacherRemarks,
+          annualTeacherRemarks
+        })
+      };
+
+      if (metaRow) {
+        await base44.entities.StudentResult.update(metaRow.id, metaPayload);
       } else {
-        await base44.entities.StudentResult.create(resultData);
+        await base44.entities.StudentResult.create(metaPayload);
       }
 
       alert('Result saved successfully!');

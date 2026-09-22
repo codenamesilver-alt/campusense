@@ -127,7 +127,7 @@ export default function FeeCollect() {
         const due = feeDues.find(d => d.id === feeId);
         await FeeDue.update(feeId, {
           status: 'paid',
-          paid_amount: due.due_amount,
+          paid_amount: due.amount,
           balance_amount: 0,
         });
       }
@@ -219,7 +219,7 @@ export default function FeeCollect() {
                               onCheckedChange={(checked) => handleFeeSelect(due.id, checked)}
                             />
                           </TableCell>
-                          <TableCell className="font-medium">{due.fee_head_name}</TableCell>
+                          <TableCell className="font-medium">{due.fee_type || due.fee_head_name || 'Fee'}</TableCell>
                           <TableCell>{formatDate(due.due_date)}</TableCell>
                           <TableCell>{getStatusBadge(due.status)}</TableCell>
                           <TableCell className="text-right">₹{due.balance_amount.toLocaleString()}</TableCell>

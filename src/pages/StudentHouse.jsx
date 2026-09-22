@@ -124,11 +124,11 @@ export default function StudentHouse() {
 
   // New function to generate house badge with dynamic styling
   const getHouseBadge = (houseName) => {
-    const house = houses.find(h => h.house_name === houseName);
+    const house = houses.find(h => h.name === houseName);
     if (!house) return <Badge variant="secondary">Not Assigned</Badge>;
     return (
       <Badge style={{ backgroundColor: `${house.house_color}20`, color: house.house_color, border: `1px solid ${house.house_color}50` }}>
-        {house.house_name}
+        {house.name}
       </Badge>
     );
   };
@@ -136,7 +136,7 @@ export default function StudentHouse() {
   const getHouseStats = () => {
     const stats = {};
     houses.forEach(house => {
-      stats[house.house_name] = 0;
+      stats[house.name] = 0;
     });
 
     Object.values(studentHouseAssignments).forEach(houseName => {
@@ -165,9 +165,9 @@ export default function StudentHouse() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-200">{house.house_name}</p>
+                      <p className="font-medium text-gray-200">{house.name}</p>
                       <p className="text-2xl font-bold" style={{color: house.house_color}}>
-                        {houseStats[house.house_name] || 0}
+                        {houseStats[house.name] || 0}
                       </p>
                     </div>
                     <Home className="h-8 w-8" style={{color: house.house_color}} />
@@ -304,13 +304,13 @@ export default function StudentHouse() {
                             </SelectTrigger>
                             <SelectContent>
                               {houses.map((house) => (
-                                <SelectItem key={house.id} value={house.house_name}>
+                                <SelectItem key={house.id} value={house.name}>
                                   <div className="flex items-center gap-2">
                                     <div
                                       className="w-3 h-3 rounded-full"
                                       style={{backgroundColor: house.house_color}}
                                     ></div>
-                                    {house.house_name}
+                                    {house.name}
                                   </div>
                                 </SelectItem>
                               ))}

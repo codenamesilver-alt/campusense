@@ -36,7 +36,7 @@ export default function SearchExpense() {
   const loadData = async () => {
     try {
       const [expenseData, headData] = await Promise.all([
-        fetchAll('Expense', '-date_of_expense'),
+        fetchAll('Expense', '-created_date'),
         base44.entities.ExpenseHead.list()
       ]);
       setExpenses(expenseData);
@@ -50,14 +50,14 @@ export default function SearchExpense() {
   const applyFilters = () => {
     let filtered = expenses;
 
-    if (filters.dateFrom) filtered = filtered.filter(e => new Date(e.date_of_expense) >= new Date(filters.dateFrom));
-    if (filters.dateTo) filtered = filtered.filter(e => new Date(e.date_of_expense) <= new Date(filters.dateTo));
-    if (filters.expenseHead) filtered = filtered.filter(e => e.expense_head_id === filters.expenseHead);
-    if (filters.amountMin) filtered = filtered.filter(e => e.amount >= parseFloat(filters.amountMin));
-    if (filters.amountMax) filtered = filtered.filter(e => e.amount <= parseFloat(filters.amountMax));
-    if (filters.payeeName) filtered = filtered.filter(e => e.payee_vendor_name?.toLowerCase().includes(filters.payeeName.toLowerCase()));
-    if (filters.paymentMode) filtered = filtered.filter(e => e.payment_mode === filters.paymentMode);
-    if (filters.keyword) filtered = filtered.filter(e => e.description?.toLowerCase().includes(filters.keyword.toLowerCase()));
+    if (filters.dateFrom) filtered = filtered.filter(e => new Date(e.date_of_expense || e.date) >= new Date(filters.dateFrom));
+    if (filters.dateTo) filtered = filtered.filter(e => new Date(e.date_of_expense || e.date) <= new Date(filters.dateTo));
+    if (filters.expenseHead) filtered = filtered.filter(e => (e.expense_head_name || e.expense_head) === filters.expenseHead);
+    if (filters.amountMin) filtered = filtered.filter(e => Number(e.amount) >= parseFloat(filters.amountMin));
+    if (filters.amountMax) filtered = filtered.filter(e => Number(e.amount) <= parseFloat(filters.amountMax));
+    if (filters.payeeName) filtered = filtered.filter(e => (e.paid_by_name || e.paid_by || '').toLowerCase().includes(filters.payeeName.toLowerCase()));
+    if (filters.paymentMode) filtered = filtered.filter(e => (e.payment_mode || e.payment_method) === filters.paymentMode);
+    if (filters.keyword) filtered = filtered.filter(e => (e.description || '').toLowerCase().includes(filters.keyword.toLowerCase()));
 
     setFilteredExpenses(filtered);
   };
@@ -74,12 +74,12 @@ export default function SearchExpense() {
   const exportData = (formatType) => {
     if (formatType === 'csv') {
       const csvData = filteredExpenses.map(expense => ({
-        'Receipt No': expense.expense_id,
-        'Date': format(new Date(expense.date_of_expense), 'dd/MM/yyyy'),
-        'Expense Head': expense.expense_head_name,
+        'Receipt No': expense.reference || expense.id,
+        'Date': format(new Date(expense.date_of_expense || expense.date), 'dd/MM/yyyy'),
+        'Expense Head': expense.expense_head_name || expense.expense_head,
         'Amount': expense.amount,
-        'Payment Mode': expense.payment_mode,
-        'Payee/Vendor': expense.payee_vendor_name,
+        'Payment Mode': expense.payment_mode || expense.payment_method,
+        'Payee/Vendor': expense.paid_by_name || expense.paid_by,
         'Description': expense.description
       }));
 
@@ -128,17 +128,17 @@ export default function SearchExpense() {
               <tbody>
                 ${filteredExpenses.map(expense => `
                   <tr>
-                    <td>${expense.expense_id}</td>
-                    <td>${format(new Date(expense.date_of_expense), 'dd/MM/yyyy')}</td>
-                    <td>${expense.expense_head_name}</td>
-                    <td>₹${expense.amount.toLocaleString()}</td>
-                    <td>${expense.payment_mode.toUpperCase()}</td>
-                    <td>${expense.payee_vendor_name}</td>
+                    <td>${expense.reference || expense.id}</td>
+                    <td>${format(new Date(expense.date_of_expense || expense.date), 'dd/MM/yyyy')}</td>
+                    <td>${expense.expense_head_name || expense.expense_head}</td>
+                    <td>₹${(expense.amount || 0).toLocaleString('en-IN')}</td>
+                    <td>${(expense.payment_mode || expense.payment_method || 'N/A').toUpperCase()}</td>
+                    <td>${expense.paid_by_name || expense.paid_by}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
-            <p style="margin-top: 20px;"><strong>Total: ₹${filteredExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}</strong></p>
+            <p style="margin-top: 20px;"><strong>Total: ₹${filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0).toLocaleString('en-IN')}</strong></p>
           </body>
         </html>
       `;
@@ -164,7 +164,7 @@ export default function SearchExpense() {
           <Input type="date" name="dateTo" value={filters.dateTo} onChange={handleFilterChange} placeholder="To Date" />
           <Select name="expenseHead" onValueChange={(v) => handleSelectFilterChange('expenseHead', v)}>
             <SelectTrigger><SelectValue placeholder="Select Expense Head" /></SelectTrigger>
-            <SelectContent>{expenseHeads.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{expenseHeads.map(h => <SelectItem key={h.id} value={h.name}>{h.name}</SelectItem>)}</SelectContent>
           </Select>
           <Select name="paymentMode" onValueChange={(v) => handleSelectFilterChange('paymentMode', v)}>
             <SelectTrigger><SelectValue placeholder="Select Payment Mode" /></SelectTrigger>
@@ -211,16 +211,16 @@ export default function SearchExpense() {
             <TableBody>
               {filteredExpenses.map(expense => (
                 <TableRow key={expense.id}>
-                  <TableCell className="font-medium">{expense.expense_id}</TableCell>
-                  <TableCell>{format(new Date(expense.date_of_expense), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{expense.expense_head_name}</TableCell>
-                  <TableCell>₹{expense.amount.toLocaleString()}</TableCell>
-                  <TableCell><Badge variant="secondary">{expense.payment_mode.toUpperCase()}</Badge></TableCell>
-                  <TableCell>{expense.payee_vendor_name || 'N/A'}</TableCell>
+                  <TableCell className="font-medium">{expense.reference || expense.id}</TableCell>
+                  <TableCell>{format(new Date(expense.date_of_expense || expense.date), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell>{expense.expense_head_name || expense.expense_head}</TableCell>
+                  <TableCell>₹{(expense.amount || 0).toLocaleString('en-IN')}</TableCell>
+                  <TableCell><Badge variant="secondary">{(expense.payment_mode || expense.payment_method || 'N/A').toUpperCase()}</Badge></TableCell>
+                  <TableCell>{expense.paid_by_name || expense.paid_by || 'N/A'}</TableCell>
                   <TableCell>{expense.description}</TableCell>
                   <TableCell>
-                    {expense.bill_invoice_url && (
-                      <a href={expense.bill_invoice_url} target="_blank" rel="noopener noreferrer">
+                    {(expense.receipt_url || expense.attachment_url || expense.reference) && (
+                      <a href={expense.receipt_url || expense.attachment_url} target="_blank" rel="noopener noreferrer">
                         <Button variant="link" size="sm">View</Button>
                       </a>
                     )}

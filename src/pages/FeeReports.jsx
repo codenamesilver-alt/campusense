@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Download, FileText, BarChart3, TrendingUp, IndianRupee, Users, Search, Receipt } from 'lucide-react';
@@ -86,9 +85,9 @@ export default function FeeReports() {
     const filteredTransactions = filterTransactions();
     
     // Calculate totals
-    const totalCollection = filteredTransactions.reduce((sum, t) => sum + t.net_amount, 0);
-    const totalDiscounts = filteredTransactions.reduce((sum, t) => sum + (t.discount_amount || 0), 0);
-    const totalPending = dues.filter(d => d.status === 'pending').reduce((sum, d) => sum + d.balance_amount, 0);
+    const totalCollection = filteredTransactions.reduce((sum, t) => sum + Number(t.net_amount || 0), 0);
+    const totalDiscounts = filteredTransactions.reduce((sum, t) => sum + Number(t.discount_amount || 0), 0);
+    const totalPending = dues.filter(d => d.status === 'pending').reduce((sum, d) => sum + Number(d.balance_amount || 0), 0);
 
     // Class-wise collection
     const classWiseData = {};
@@ -96,7 +95,7 @@ export default function FeeReports() {
       const student = students.find(s => s.id === transaction.student_id);
       if (student) {
         const classKey = `Class ${student.class}`;
-        classWiseData[classKey] = (classWiseData[classKey] || 0) + transaction.net_amount;
+        classWiseData[classKey] = (classWiseData[classKey] || 0) + Number(transaction.net_amount || 0);
       }
     });
 
@@ -109,7 +108,7 @@ export default function FeeReports() {
     const monthlyData = {};
     filteredTransactions.forEach(transaction => {
       const month = format(new Date(transaction.transaction_date), 'MMM yyyy');
-      monthlyData[month] = (monthlyData[month] || 0) + transaction.net_amount;
+      monthlyData[month] = (monthlyData[month] || 0) + Number(transaction.net_amount || 0);
     });
 
     const monthlyTrends = Object.entries(monthlyData).map(([month, amount]) => ({
@@ -121,7 +120,7 @@ export default function FeeReports() {
     const paymentModeData = {};
     filteredTransactions.forEach(transaction => {
       const mode = transaction.payment_mode || 'Unknown';
-      paymentModeData[mode] = (paymentModeData[mode] || 0) + transaction.net_amount;
+      paymentModeData[mode] = (paymentModeData[mode] || 0) + Number(transaction.net_amount || 0);
     });
 
     const paymentModeBreakdown = Object.entries(paymentModeData).map(([mode, amount]) => ({
@@ -315,7 +314,7 @@ export default function FeeReports() {
             <p><strong>Student Name:</strong> ${searchedReceipt.student?.first_name || ''} ${searchedReceipt.student?.last_name || ''}</p>
             <p><strong>Admission No:</strong> ${searchedReceipt.student?.admission_number || ''}</p>
             <p><strong>Class:</strong> ${searchedReceipt.student?.class || ''}-${searchedReceipt.student?.section || ''}</p>
-            <p><strong>Payment Mode:</strong> ${searchedReceipt.payment_mode.toUpperCase()}</p>
+            <p><strong>Payment Mode:</strong> ${(searchedReceipt.payment_mode || 'N/A').toUpperCase()}</p>
             ${searchedReceipt.payment_reference ? `<p><strong>Reference:</strong> ${searchedReceipt.payment_reference}</p>` : ''}
           </div>
 
@@ -331,17 +330,17 @@ export default function FeeReports() {
               ${searchedReceipt.fees_paid.map(fee => `
                 <tr>
                   <td>${fee.fee_head_name}</td>
-                  <td>${format(new Date(fee.due_date), 'dd/MM/yyyy')}</td>
-                  <td style="text-align: right;">${fee.amount.toFixed(2)}</td>
+                  <td>${fee.due_date ? format(new Date(fee.due_date), 'dd/MM/yyyy') : 'N/A'}</td>
+                  <td style="text-align: right;">${Number(fee.amount || 0).toFixed(2)}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
 
           <div class="total-section">
-            <p><strong>Subtotal:</strong> ₹${searchedReceipt.total_amount.toFixed(2)}</p>
-            ${searchedReceipt.discount_amount > 0 ? `<p><strong>Total Discount:</strong> -₹${searchedReceipt.discount_amount.toFixed(2)}</p>` : ''}
-            <p style="font-size: 13px; font-weight: bold;"><strong>Total Amount Paid:</strong> ₹${searchedReceipt.net_amount.toFixed(2)}</p>
+            <p><strong>Subtotal:</strong> ₹${Number(searchedReceipt.total_amount || 0).toFixed(2)}</p>
+            ${Number(searchedReceipt.discount_amount || 0) > 0 ? `<p><strong>Total Discount:</strong> -₹${Number(searchedReceipt.discount_amount).toFixed(2)}</p>` : ''}
+            <p style="font-size: 13px; font-weight: bold;"><strong>Total Amount Paid:</strong> ₹${Number(searchedReceipt.net_amount || 0).toFixed(2)}</p>
           </div>
 
           <div class="system-note">
@@ -409,15 +408,15 @@ export default function FeeReports() {
             <div class="summary">
               <div class="summary-card">
                 <h3>Total Collection</h3>
-                <h2>₹${reportData.totalCollection.toLocaleString('en-IN')}</h2>
+                <h2>₹${reportData.totalCollection.toLocaleString('en-US')}</h2>
               </div>
               <div class="summary-card">
                 <h3>Total Discounts</h3>
-                <h2>₹${reportData.totalDiscounts.toLocaleString('en-IN')}</h2>
+                <h2>₹${reportData.totalDiscounts.toLocaleString('en-US')}</h2>
               </div>
               <div class="summary-card">
                 <h3>Pending Amount</h3>
-                <h2>₹${reportData.totalPending.toLocaleString('en-IN')}</h2>
+                <h2>₹${reportData.totalPending.toLocaleString('en-US')}</h2>
               </div>
             </div>
 
@@ -510,7 +509,7 @@ export default function FeeReports() {
                     Student: ${searchedReceipt.student?.first_name} ${searchedReceipt.student?.last_name} (${searchedReceipt.student?.admission_number})
                   </p>
                   <p className="text-sm text-gray-600">Class: ${searchedReceipt.student?.class}-${searchedReceipt.student?.section}</p>
-                  <p className="text-sm font-semibold mt-2">Amount: ₹{searchedReceipt.net_amount.toFixed(2)}</p>
+                  <p className="text-sm font-semibold mt-2">Amount: ₹{Number(searchedReceipt.net_amount || 0).toFixed(2)}</p>
                 </div>
                 <Button onClick={printSearchedReceipt}>
                   <Receipt className="mr-2 h-4 w-4" />
@@ -619,7 +618,7 @@ export default function FeeReports() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total Collection</p>
-                <p className="text-2xl font-bold text-green-600">₹{reportData.totalCollection.toLocaleString('en-IN')}</p>
+                <p className="text-2xl font-bold text-green-600">₹{reportData.totalCollection.toLocaleString('en-US')}</p>
               </div>
             </div>
           </CardContent>
@@ -633,7 +632,7 @@ export default function FeeReports() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total Discounts</p>
-                <p className="text-2xl font-bold text-blue-600">₹{reportData.totalDiscounts.toLocaleString('en-IN')}</p>
+                <p className="text-2xl font-bold text-blue-600">₹{reportData.totalDiscounts.toLocaleString('en-US')}</p>
               </div>
             </div>
           </CardContent>
@@ -647,7 +646,7 @@ export default function FeeReports() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Pending Amount</p>
-                <p className="text-2xl font-bold text-orange-600">₹{reportData.totalPending.toLocaleString('en-IN')}</p>
+                <p className="text-2xl font-bold text-orange-600">₹{reportData.totalPending.toLocaleString('en-US')}</p>
               </div>
             </div>
           </CardContent>
@@ -759,7 +758,7 @@ export default function FeeReports() {
                   {reportData.classWiseCollection.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{item.class}</TableCell>
-                      <TableCell>₹{item.amount.toLocaleString('en-IN')}</TableCell>
+                      <TableCell>₹{item.amount.toLocaleString('en-US')}</TableCell>
                       <TableCell>
                         {reportData.totalCollection > 0 ? 
                           ((item.amount / reportData.totalCollection) * 100).toFixed(1) : 0}%

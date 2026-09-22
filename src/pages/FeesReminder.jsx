@@ -29,6 +29,17 @@ export default function FeesReminderPage() {
     }
   }, [selectedMonth]);
 
+  const getMonthRange = (monthName) => {
+    const monthIndex = months.indexOf(monthName) + 1;
+    const year = new Date().getFullYear();
+    const month = String(monthIndex).padStart(2, '0');
+    const lastDay = new Date(year, monthIndex, 0).getDate();
+    return {
+      start: `${year}-${month}-01`,
+      end: `${year}-${month}-${String(lastDay).padStart(2, '0')}`
+    };
+  };
+
   const loadStudentsWithPendingFees = async () => {
     try {
       setIsLoading(true);
@@ -36,8 +47,9 @@ export default function FeesReminderPage() {
       // Load all active students
       const allStudents = await Student.filter({ status: 'active' });
       
-      // Load payments for the selected month
-      const payments = await FeesPayment.filter({ month: selectedMonth });
+      // Load payments for the selected month (fees_payments has no month column; use payment_date range)
+      const range = getMonthRange(selectedMonth);
+      const payments = await FeesPayment.filter({ payment_date: { $gte: range.start, $lte: range.end } });
       const paidStudentIds = payments.map(p => p.student_id);
       
       // Filter students who haven't paid for the selected month

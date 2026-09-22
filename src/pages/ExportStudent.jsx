@@ -102,17 +102,14 @@ export default function ExportStudent() {
       'Section': student.section || '',
       'Gender': student.gender || '',
       'Date of Birth': student.date_of_birth ? formatDateToDDMMYYYY(student.date_of_birth) : '',
-      'Religion': student.religion || '',
       'Phone': student.guardian_phone || '',
       'Email': student.guardian_email || '',
       'Date of Admission': student.admission_date ? formatDateToDDMMYYYY(student.admission_date) : '',
       'Father Name': student.father_name || '',
       'Mother Name': student.mother_name || '',
-      'Guardian Name': student.guardian_name || '',
       'Address': student.address || '',
       'Blood Group': student.blood_group || '',
       'House': student.house || '',
-      'Fees Group': student.fees_group || '',
       'Status': student.status || '',
       'Photo URL': student.photo_url || ''
     }));

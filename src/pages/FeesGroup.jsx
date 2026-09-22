@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 export default function FeesGroupPage() {
   const [feesGroups, setFeesGroups] = useState([]);
   const [formData, setFormData] = useState({
-    fees_group_name: '',
+    name: '',
     description: ''
   });
   const [editingId, setEditingId] = useState(null);
@@ -42,7 +42,7 @@ export default function FeesGroupPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.fees_group_name.trim()) {
+    if (!formData.name.trim()) {
       alert('Please enter fees group name');
       return;
     }
@@ -58,7 +58,7 @@ export default function FeesGroupPage() {
         alert('Fees group added successfully!');
       }
       
-      setFormData({ fees_group_name: '', description: '' });
+      setFormData({ name: '', description: '' });
       setEditingId(null);
       loadFeesGroups();
     } catch (error) {
@@ -71,7 +71,7 @@ export default function FeesGroupPage() {
 
   const handleEdit = (feesGroup) => {
     setFormData({
-      fees_group_name: feesGroup.fees_group_name,
+      name: feesGroup.name,
       description: feesGroup.description || ''
     });
     setEditingId(feesGroup.id);
@@ -91,7 +91,7 @@ export default function FeesGroupPage() {
   };
 
   const cancelEdit = () => {
-    setFormData({ fees_group_name: '', description: '' });
+    setFormData({ name: '', description: '' });
     setEditingId(null);
   };
 
@@ -117,12 +117,12 @@ export default function FeesGroupPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fees_group_name">Fees Group Name *</Label>
+                  <Label htmlFor="name">Fees Group Name *</Label>
                   <Input
-                    id="fees_group_name"
+                    id="name"
                     placeholder="e.g., Primary Group, Secondary Group, Quarterly Fees"
-                    value={formData.fees_group_name}
-                    onChange={(e) => handleInputChange('fees_group_name', e.target.value)}
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
                     required
                   />
                 </div>
@@ -174,7 +174,7 @@ export default function FeesGroupPage() {
                   key={index}
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleInputChange('fees_group_name', suggestion)}
+                  onClick={() => handleInputChange('name', suggestion)}
                   className="w-full justify-start text-left h-auto py-1"
                 >
                   {suggestion}
@@ -213,7 +213,7 @@ export default function FeesGroupPage() {
                       feesGroups.map((feesGroup) => (
                         <TableRow key={feesGroup.id}>
                           <TableCell>
-                            <div className="font-medium">{feesGroup.fees_group_name}</div>
+                            <div className="font-medium">{feesGroup.name}</div>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-gray-600 max-w-xs truncate">

@@ -86,6 +86,38 @@ async function getColumns(table) {
   return columnCache.get(table);
 }
 
+const USER_TABLE = 'users';
+
+function stripUnknownColumns(data, tableInfo) {
+  const dropped = [];
+  for (const key of Object.keys(data)) {
+    if (!(key in tableInfo)) {
+      dropped.push(key);
+      delete data[key];
+    }
+  }
+  if (dropped.length > 0) {
+    console.warn(`[crud] dropped unknown column keys: ${dropped.join(', ')}`);
+  }
+  return data;
+}
+
+function normalizeUserData(table, data) {
+  if (table === USER_TABLE && typeof data.email === 'string') {
+    data.email = data.email.toLowerCase().trim();
+  }
+  return data;
+}
+
+function hideSecrets(table, rows) {
+  if (table !== USER_TABLE) return rows;
+  const list = Array.isArray(rows) ? rows : rows ? [rows] : [];
+  for (const row of list) {
+    if (row && 'password_hash' in row) delete row.password_hash;
+  }
+  return rows;
+}
+
 async function applySort(queryBuilder, table, sort) {
   if (!sort) return;
   const columns = await getColumns(table);
@@ -146,8 +178,7 @@ router.get('/:resource/filter', authenticate, async (req, res, next) => {
     if (limit) builder.limit(Number(limit));
     if (skip) builder.offset(Number(skip));
 
-    const rows = await builder;
-    res.json(rows);
+    res.json(hideSecrets(table, await builder));
   } catch (error) {
     next(error);
   }
@@ -163,7 +194,7 @@ router.get('/:resource', authenticate, async (req, res, next) => {
     if (limit) builder.limit(Number(limit));
     if (skip) builder.offset(Number(skip));
 
-    res.json(await builder);
+    res.json(hideSecrets(table, await builder));
   } catch (error) {
     next(error);
   }
@@ -174,7 +205,7 @@ router.get('/:resource/:id', authenticate, async (req, res, next) => {
     const table = getTable(req.params.resource);
     const row = await db(table).where({ id: req.params.id }).first();
     if (!row) return res.status(404).json({ error: 'Not found' });
-    res.json(row);
+    res.json(hideSecrets(table, row));
   } catch (error) {
     next(error);
   }
@@ -191,16 +222,15 @@ router.post('/:resource', authenticate, async (req, res, next) => {
 
     // Auto insert created_date if table has it and not provided
     const tableInfo = await db(table).columnInfo();
-    for (const key of Object.keys(data)) {
-      if (!(key in tableInfo)) delete data[key];
-    }
+    stripUnknownColumns(data, tableInfo);
+    normalizeUserData(table, data);
     if (tableInfo.created_date && !data.created_date) {
       data.created_date = new Date();
     }
 
     const rows = await db(table).insert(data).returning('*');
     const created = Array.isArray(rows) ? rows[0] : rows.rows[0];
-    res.status(201).json(created);
+    res.status(201).json(hideSecrets(table, created));
   } catch (error) {
     next(error);
   }
@@ -217,16 +247,15 @@ router.post('/:resource/bulk', authenticate, async (req, res, next) => {
     const tableInfo = await db(table).columnInfo();
     const cleaned = records.map((r) => {
       const out = { ...r };
-      for (const key of Object.keys(out)) {
-        if (!(key in tableInfo)) delete out[key];
-      }
+      stripUnknownColumns(out, tableInfo);
+      normalizeUserData(table, out);
       if (tableInfo.created_date && !out.created_date) out.created_date = new Date();
       return out;
     });
 
     const rows = await db(table).insert(cleaned).returning('*');
     const created = Array.isArray(rows) ? rows : rows.rows;
-    res.status(201).json(created);
+    res.status(201).json(hideSecrets(table, created));
   } catch (error) {
     next(error);
   }
@@ -240,9 +269,8 @@ router.patch('/:resource/:id', authenticate, async (req, res, next) => {
     delete data.created_date;
 
     const tableInfo = await db(table).columnInfo();
-    for (const key of Object.keys(data)) {
-      if (!(key in tableInfo)) delete data[key];
-    }
+    stripUnknownColumns(data, tableInfo);
+    normalizeUserData(table, data);
     if (tableInfo.updated_date) {
       data.updated_date = new Date();
     }
@@ -250,7 +278,7 @@ router.patch('/:resource/:id', authenticate, async (req, res, next) => {
     const count = await db(table).where({ id: req.params.id }).update(data);
     if (count === 0) return res.status(404).json({ error: 'Not found' });
     const updated = await db(table).where({ id: req.params.id }).first();
-    res.json(updated);
+    res.json(hideSecrets(table, updated));
   } catch (error) {
     next(error);
   }
@@ -264,6 +292,8 @@ router.put('/:resource/:id', authenticate, async (req, res, next) => {
     delete data.created_date;
 
     const tableInfo = await db(table).columnInfo();
+    stripUnknownColumns(data, tableInfo);
+    normalizeUserData(table, data);
     if (tableInfo.updated_date) {
       data.updated_date = new Date();
     }
@@ -271,7 +301,7 @@ router.put('/:resource/:id', authenticate, async (req, res, next) => {
     const count = await db(table).where({ id: req.params.id }).update(data);
     if (count === 0) return res.status(404).json({ error: 'Not found' });
     const updated = await db(table).where({ id: req.params.id }).first();
-    res.json(updated);
+    res.json(hideSecrets(table, updated));
   } catch (error) {
     next(error);
   }

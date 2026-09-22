@@ -59,8 +59,26 @@ export default function ReportCardSettings() {
     try {
       const existingSettings = await base44.entities.ReportCardSettings.list();
       if (existingSettings.length > 0) {
-        setSettings(existingSettings[0]);
-        setExistingSettingsId(existingSettings[0].id);
+        const row = existingSettings[0];
+        const parseArr = (value, fallback) => {
+          if (Array.isArray(value)) return value;
+          if (typeof value === 'string' && value.trim()) {
+            try {
+              const parsed = JSON.parse(value);
+              if (Array.isArray(parsed)) return parsed;
+            } catch (e) { /* keep fallback */ }
+          }
+          return fallback;
+        };
+        setSettings(prev => ({
+          ...prev,
+          ...row,
+          scholastic_grades: parseArr(row.scholastic_grades, DEFAULT_SCHOLASTIC_GRADES),
+          co_scholastic_grades: parseArr(row.co_scholastic_grades, DEFAULT_CO_SCHOLASTIC_GRADES),
+          enable_principal_remarks: row.enable_principal_remarks ?? true,
+          enable_teacher_remarks: row.enable_teacher_remarks ?? true
+        }));
+        setExistingSettingsId(row.id);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -152,10 +170,17 @@ export default function ReportCardSettings() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      const payload = {
+        ...settings,
+        scholastic_grades: JSON.stringify(settings.scholastic_grades || []),
+        co_scholastic_grades: JSON.stringify(settings.co_scholastic_grades || []),
+        enable_principal_remarks: !!settings.enable_principal_remarks,
+        enable_teacher_remarks: !!settings.enable_teacher_remarks
+      };
       if (existingSettingsId) {
-        await base44.entities.ReportCardSettings.update(existingSettingsId, settings);
+        await base44.entities.ReportCardSettings.update(existingSettingsId, payload);
       } else {
-        const created = await base44.entities.ReportCardSettings.create(settings);
+        const created = await base44.entities.ReportCardSettings.create(payload);
         setExistingSettingsId(created.id);
       }
       alert('Settings saved successfully!');

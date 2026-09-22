@@ -26,14 +26,12 @@ export default function StudentAdmission() {
     section: '',
     gender: '',
     date_of_birth: '',
-    religion: '',
     guardian_phone: '',
     guardian_email: '',
     admission_date: new Date().toISOString().split('T')[0],
     photo_url: '',
     father_name: '',
     mother_name: '',
-    guardian_name: '',
     address: '',
     blood_group: '',
     house: '',
@@ -122,14 +120,12 @@ export default function StudentAdmission() {
         section: '',
         gender: '',
         date_of_birth: '',
-        religion: '',
         guardian_phone: '',
         guardian_email: '',
         admission_date: new Date().toISOString().split('T')[0],
         photo_url: '',
         father_name: '',
         mother_name: '',
-        guardian_name: '',
         address: '',
         blood_group: '',
         house: '',
@@ -264,15 +260,6 @@ export default function StudentAdmission() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="religion">Religion</Label>
-                <Input
-                  id="religion"
-                  value={formData.religion}
-                  onChange={(e) => handleInputChange('religion', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="guardian_phone">Phone</Label>
                 <Input
                   id="guardian_phone"
@@ -396,15 +383,6 @@ export default function StudentAdmission() {
                   id="mother_name"
                   value={formData.mother_name}
                   onChange={(e) => handleInputChange('mother_name', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="guardian_name">Guardian Name</Label>
-                <Input
-                  id="guardian_name"
-                  value={formData.guardian_name}
-                  onChange={(e) => handleInputChange('guardian_name', e.target.value)}
                 />
               </div>
 

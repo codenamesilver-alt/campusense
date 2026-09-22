@@ -156,7 +156,7 @@ router.post('/logout', authenticate, (req, res) => {
 
 router.post('/register', async (req, res, next) => {
   try {
-    const { email, password, first_name, last_name, phone, role } = req.body;
+    const { email, password, first_name, last_name, phone } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
@@ -173,20 +173,20 @@ router.post('/register', async (req, res, next) => {
       first_name,
       last_name,
       phone,
-      role: role || 'admin',
+      role: PENDING_ROLE,
       status: 'active'
     }).returning('*');
     const { id } = rows[0];
 
     const token = jwt.sign(
-      { id, email: String(email).toLowerCase().trim(), role: role || 'admin' },
+      { id, email: String(email).toLowerCase().trim(), role: PENDING_ROLE },
       JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.status(201).json({
       token,
-      user: { id, email: String(email).toLowerCase().trim(), first_name, last_name, phone, role: role || 'admin' }
+      user: { id, email: String(email).toLowerCase().trim(), first_name, last_name, phone, role: PENDING_ROLE }
     });
   } catch (error) {
     next(error);

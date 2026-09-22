@@ -162,8 +162,8 @@ export default function FeesMasterPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {feesGroups.map(group => (
-                        <SelectItem key={group.id} value={group.fees_group_name}>
-                          {group.fees_group_name}
+                        <SelectItem key={group.id} value={group.name}>
+                          {group.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -178,8 +178,8 @@ export default function FeesMasterPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {feesTypes.map(type => (
-                        <SelectItem key={type.id} value={type.fees_type_name}>
-                          {type.fees_type_name}
+                        <SelectItem key={type.id} value={type.name}>
+                          {type.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -307,7 +307,7 @@ export default function FeesMasterPage() {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {format(new Date(feesMaster.due_date), 'dd/MM/yyyy')}
+                              {feesMaster.due_date ? format(new Date(feesMaster.due_date), 'dd/MM/yyyy') : 'N/A'}
                             </div>
                           </TableCell>
                           <TableCell>

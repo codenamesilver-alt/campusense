@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { fetchAll, fetchAllFiltered } from '@/lib/fetchAll';
+import { fetchAll } from '@/lib/fetchAll';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -192,12 +192,14 @@ export default function StudentFeeMappingPage() {
       setProgressMessage('🔍 Finding applicable fee structures...');
       
       // Get applicable fee structures for the selected class
+      const selectedClassId = classes.find(c => c.name === selectedClass)?.id;
+      const selectedSectionId = selectedSection === 'all' ? null : sections.find(sec => sec.name === selectedSection)?.id;
       const applicableStructures = classStructures.filter(s => {
-        const classMatches = s.class === selectedClass;
+        const classMatches = s.class_id === selectedClassId;
         const sectionMatches = selectedSection === 'all' 
           ? true  // If "All Sections" is selected, include all fee structures for this class
-          : (s.section === selectedSection || !s.section); // Specific section or no section specified
-        const isEnabled = s.enabled;
+          : (s.section_id === selectedSectionId || !s.section_id); // Specific section or no section specified
+        const isEnabled = s.enabled !== false;
         const yearMatches = s.academic_year === academicYear;
         
         return classMatches && sectionMatches && isEnabled && yearMatches;
@@ -223,7 +225,7 @@ export default function StudentFeeMappingPage() {
         for (const structure of applicableStructures) {
           // Skip Admission Fee for existing students (is_new_admission is false, null, or undefined)
           const feeHeadForCheck = feeHeads.find(h => h.id === structure.fee_head_id);
-          const isAdmissionFee = feeHeadForCheck?.fee_head_name?.toLowerCase().includes('admission');
+          const isAdmissionFee = ((feeHeadForCheck?.fee_head_name || feeHeadForCheck?.name) || '').toLowerCase().includes('admission');
           if (isAdmissionFee && !student.is_new_admission) {
             skippedCount++;
             continue;
@@ -266,10 +268,8 @@ export default function StudentFeeMappingPage() {
               const mapping = {
                 student_id: student.id,
                 fee_head_id: structure.fee_head_id,
-                fee_head_name: structure.fee_head_name,
                 amount: structure.amount,
                 due_date: dueDateStr,
-                frequency: frequency,
                 academic_year: academicYear,
                 status: 'active'
               };
@@ -277,16 +277,11 @@ export default function StudentFeeMappingPage() {
 
               const feeDue = {
                 student_id: student.id,
-                fee_head_id: structure.fee_head_id,
-                fee_head_name: structure.fee_head_name,
-                due_amount: structure.amount,
+                fee_type: (feeHead?.fee_head_name || feeHead?.name || 'Fee').slice(0, 50),
+                amount: structure.amount,
                 paid_amount: 0,
                 balance_amount: structure.amount,
                 due_date: dueDateStr,
-                due_month: format(dueDate, 'MMMM'),
-                due_year: dueDate.getFullYear().toString(),
-                late_fine: 0,
-                discount_applied: 0,
                 academic_year: academicYear,
                 status: 'pending'
               };
@@ -374,6 +369,11 @@ export default function StudentFeeMappingPage() {
       m.academic_year === academicYear &&
       m.status === 'active'
     );
+  };
+
+  const getFeeHeadName = (feeHeadId) => {
+    const feeHead = feeHeads.find(h => h.id === feeHeadId);
+    return feeHead?.fee_head_name || feeHead?.name || 'Fee';
   };
 
   return (
@@ -539,7 +539,7 @@ export default function StudentFeeMappingPage() {
                   ) : (
                     filteredStudents.map((student) => {
                       const studentMappings = getStudentFeeMappings(student.id);
-                      const totalAmount = studentMappings.reduce((sum, mapping) => sum + mapping.amount, 0);
+                      const totalAmount = studentMappings.reduce((sum, mapping) => sum + Number(mapping.amount || 0), 0);
                       
                       return (
                         <TableRow key={student.id}>
@@ -565,7 +565,7 @@ export default function StudentFeeMappingPage() {
                                 studentMappings.map((mapping, index) => (
                                   <div key={index} className="flex items-center gap-2">
                                     <Badge variant="outline" className="text-xs">
-                                      {mapping.fee_head_name}
+                                      {getFeeHeadName(mapping.fee_head_id)}
                                     </Badge>
                                     <span className="text-sm">₹{mapping.amount.toLocaleString('en-IN')}</span>
                                   </div>

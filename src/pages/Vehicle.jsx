@@ -24,10 +24,19 @@ export default function VehiclePage() {
   };
 
   const handleSave = async () => {
+    const payload = {
+      registration_number: currentVehicle.vehicle_number,
+      vehicle_number: currentVehicle.vehicle_number,
+      vehicle_type: currentVehicle.model,
+      model: currentVehicle.model,
+      capacity: currentVehicle.capacity,
+      insurance_expiry: currentVehicle.insurance_expiry,
+      status: currentVehicle.status
+    };
     if (currentVehicle.id) {
-      await Vehicle.update(currentVehicle.id, currentVehicle);
+      await Vehicle.update(currentVehicle.id, payload);
     } else {
-      await Vehicle.create(currentVehicle);
+      await Vehicle.create(payload);
     }
     fetchData();
     closeDialog();

@@ -3,29 +3,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash } from 'lucide-react';
 import { GradeConfiguration } from '@/entities/GradeConfiguration';
 import { DivisionConfiguration } from '@/entities/DivisionConfiguration';
-import { base44 } from '@/api/base44Client';
 
-const GradeConfigTab = ({ sessions, currentSession }) => {
+const GradeConfigTab = () => {
     const [grades, setGrades] = useState([]);
-    const [newGrade, setNewGrade] = useState({ grade_name: '', min_percentage: '', max_percentage: '', remark: '', academic_session: currentSession });
-
-    useEffect(() => {
-        setNewGrade(prev => ({ ...prev, academic_session: currentSession }));
-    }, [currentSession]);
+    const [newGrade, setNewGrade] = useState({ grade: '', min_percentage: '', max_percentage: '', description: '' });
 
     useEffect(() => { loadGrades(); }, []);
     
     const loadGrades = async () => setGrades(await GradeConfiguration.list());
     
     const handleAddGrade = async () => {
-        if(!newGrade.grade_name || !newGrade.min_percentage || !newGrade.max_percentage) return;
-        await GradeConfiguration.create({...newGrade, min_percentage: Number(newGrade.min_percentage), max_percentage: Number(newGrade.max_percentage)});
-        setNewGrade({ grade_name: '', min_percentage: '', max_percentage: '', remark: '', academic_session: currentSession });
+        if(!newGrade.grade || !newGrade.min_percentage || !newGrade.max_percentage) return;
+        await GradeConfiguration.create({
+            name: newGrade.grade,
+            grade: newGrade.grade,
+            min_percentage: String(newGrade.min_percentage),
+            max_percentage: String(newGrade.max_percentage),
+            description: newGrade.description
+        });
+        setNewGrade({ grade: '', min_percentage: '', max_percentage: '', description: '' });
         loadGrades();
     };
 
@@ -36,15 +36,11 @@ const GradeConfigTab = ({ sessions, currentSession }) => {
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-6 gap-2">
-                <Input placeholder="Grade (e.g., A1)" value={newGrade.grade_name} onChange={e => setNewGrade({...newGrade, grade_name: e.target.value})} />
+            <div className="grid grid-cols-5 gap-2">
+                <Input placeholder="Grade (e.g., A1)" value={newGrade.grade} onChange={e => setNewGrade({...newGrade, grade: e.target.value})} />
                 <Input placeholder="Min %" type="number" value={newGrade.min_percentage} onChange={e => setNewGrade({...newGrade, min_percentage: e.target.value})} />
                 <Input placeholder="Max %" type="number" value={newGrade.max_percentage} onChange={e => setNewGrade({...newGrade, max_percentage: e.target.value})} />
-                <Input placeholder="Remark (e.g., Excellent)" value={newGrade.remark} onChange={e => setNewGrade({...newGrade, remark: e.target.value})} />
-                <Select value={newGrade.academic_session} onValueChange={v => setNewGrade({...newGrade, academic_session: v})}>
-                    <SelectTrigger><SelectValue placeholder="Session"/></SelectTrigger>
-                    <SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <Input placeholder="Remark (e.g., Excellent)" value={newGrade.description} onChange={e => setNewGrade({...newGrade, description: e.target.value})} />
                 <Button onClick={handleAddGrade}><Plus className="mr-2 h-4 w-4"/> Add Grade</Button>
             </div>
             <Table>
@@ -52,9 +48,9 @@ const GradeConfigTab = ({ sessions, currentSession }) => {
                 <TableBody>
                     {grades.map(g => (
                         <TableRow key={g.id}>
-                            <TableCell>{g.grade_name}</TableCell>
+                            <TableCell>{g.grade}</TableCell>
                             <TableCell>{g.min_percentage}% - {g.max_percentage}%</TableCell>
-                            <TableCell>{g.remark}</TableCell>
+                            <TableCell>{g.description}</TableCell>
                             <TableCell><Button variant="ghost" size="icon" onClick={() => handleDeleteGrade(g.id)}><Trash className="h-4 w-4 text-red-500"/></Button></TableCell>
                         </TableRow>
                     ))}
@@ -64,22 +60,18 @@ const GradeConfigTab = ({ sessions, currentSession }) => {
     );
 };
 
-const DivisionConfigTab = ({ sessions, currentSession }) => {
+const DivisionConfigTab = () => {
     const [divisions, setDivisions] = useState([]);
-    const [newDivision, setNewDivision] = useState({ division_name: '', min_percentage: '', academic_session: currentSession });
-
-    useEffect(() => {
-        setNewDivision(prev => ({ ...prev, academic_session: currentSession }));
-    }, [currentSession]);
+    const [newDivision, setNewDivision] = useState({ name: '', min_percentage: '' });
 
     useEffect(() => { loadDivisions(); }, []);
 
     const loadDivisions = async () => setDivisions(await DivisionConfiguration.list());
 
     const handleAddDivision = async () => {
-        if(!newDivision.division_name || !newDivision.min_percentage) return;
-        await DivisionConfiguration.create({...newDivision, min_percentage: Number(newDivision.min_percentage)});
-        setNewDivision({ division_name: '', min_percentage: '', academic_session: currentSession });
+        if(!newDivision.name || !newDivision.min_percentage) return;
+        await DivisionConfiguration.create({ name: newDivision.name, min_percentage: Number(newDivision.min_percentage) });
+        setNewDivision({ name: '', min_percentage: '' });
         loadDivisions();
     };
     
@@ -90,13 +82,9 @@ const DivisionConfigTab = ({ sessions, currentSession }) => {
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-4 gap-2">
-                <Input placeholder="Division (e.g., First Division)" value={newDivision.division_name} onChange={e => setNewDivision({...newDivision, division_name: e.target.value})} />
+            <div className="grid grid-cols-3 gap-2">
+                <Input placeholder="Division (e.g., First Division)" value={newDivision.name} onChange={e => setNewDivision({...newDivision, name: e.target.value})} />
                 <Input placeholder="Min %" type="number" value={newDivision.min_percentage} onChange={e => setNewDivision({...newDivision, min_percentage: e.target.value})} />
-                <Select value={newDivision.academic_session} onValueChange={v => setNewDivision({...newDivision, academic_session: v})}>
-                    <SelectTrigger><SelectValue placeholder="Session"/></SelectTrigger>
-                    <SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}</SelectContent>
-                </Select>
                 <Button onClick={handleAddDivision}><Plus className="mr-2 h-4 w-4"/> Add Division</Button>
             </div>
             <Table>
@@ -104,7 +92,7 @@ const DivisionConfigTab = ({ sessions, currentSession }) => {
                 <TableBody>
                     {divisions.map(d => (
                         <TableRow key={d.id}>
-                            <TableCell>{d.division_name}</TableCell>
+                            <TableCell>{d.name}</TableCell>
                             <TableCell>&gt;= {d.min_percentage}%</TableCell>
                             <TableCell><Button variant="ghost" size="icon" onClick={() => handleDeleteDivision(d.id)}><Trash className="h-4 w-4 text-red-500"/></Button></TableCell>
                         </TableRow>
@@ -117,17 +105,6 @@ const DivisionConfigTab = ({ sessions, currentSession }) => {
 
 
 export default function MarksGrades() {
-  const [sessions, setSessions] = useState([]);
-  const [currentSession, setCurrentSession] = useState('');
-
-  useEffect(() => {
-    base44.entities.Session.list().then(data => {
-      setSessions(data);
-      const current = data.find(s => s.is_current) || data[0];
-      if (current) setCurrentSession(current.name);
-    });
-  }, []);
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Marks & Grades Configuration</h1>
@@ -139,10 +116,10 @@ export default function MarksGrades() {
           <TabsTrigger value="divisions">Division Configuration</TabsTrigger>
         </TabsList>
         <TabsContent value="grades">
-          <Card><CardHeader><CardTitle>Grade Rules</CardTitle></CardHeader><CardContent><GradeConfigTab sessions={sessions} currentSession={currentSession} /></CardContent></Card>
+          <Card><CardHeader><CardTitle>Grade Rules</CardTitle></CardHeader><CardContent><GradeConfigTab /></CardContent></Card>
         </TabsContent>
         <TabsContent value="divisions">
-          <Card><CardHeader><CardTitle>Division Rules</CardTitle></CardHeader><CardContent><DivisionConfigTab sessions={sessions} currentSession={currentSession} /></CardContent></Card>
+          <Card><CardHeader><CardTitle>Division Rules</CardTitle></CardHeader><CardContent><DivisionConfigTab /></CardContent></Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -36,14 +36,18 @@ export default function AddItemStock() {
   };
 
   const handleSave = async () => {
+    const payload = {
+      name: currentItem.name,
+      category: currentItem.category,
+      quantity: currentItem.quantity,
+      unit: currentItem.unit,
+      unit_price: currentItem.unit_price,
+      status: currentItem.status
+    };
     if (currentItem.id) {
-      await InventoryItem.update(currentItem.id, currentItem);
+      await InventoryItem.update(currentItem.id, payload);
     } else {
-      await InventoryItem.create({ 
-        ...currentItem, 
-        item_code: `ITM-${Date.now().toString().slice(-6)}`,
-        available_quantity: currentItem.total_quantity 
-      });
+      await InventoryItem.create(payload);
     }
     fetchData();
     closeDialog();
@@ -58,7 +62,7 @@ export default function AddItemStock() {
 
   const openDialog = (item = null) => {
     setCurrentItem(item || {
-      item_name: '', category_name: '', unit: '', total_quantity: 0,
+      name: '', category: '', unit: '', quantity: 0,
       unit_price: 0, minimum_stock: 0, description: '', status: 'active'
     });
     setIsDialogOpen(true);
@@ -67,7 +71,7 @@ export default function AddItemStock() {
   const closeDialog = () => setIsDialogOpen(false);
 
   const getLowStockItems = () => {
-    return items.filter(item => item.available_quantity <= item.minimum_stock);
+    return items.filter(item => item.quantity <= item.minimum_stock);
   };
 
   return (
@@ -91,7 +95,7 @@ export default function AddItemStock() {
             <div className="flex flex-wrap gap-2">
               {getLowStockItems().map(item => (
                 <Badge key={item.id} variant="destructive">
-                  {item.item_name} ({item.available_quantity} {item.unit})
+                  {item.name} ({item.quantity} {item.unit})
                 </Badge>
               ))}
             </div>
@@ -120,17 +124,16 @@ export default function AddItemStock() {
                 <TableRow key={item.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{item.item_name}</p>
-                      <p className="text-sm text-gray-500">Code: {item.item_code}</p>
+                      <p className="font-medium">{item.name}</p>
                     </div>
                   </TableCell>
-                  <TableCell>{item.category_name}</TableCell>
+                  <TableCell>{item.category}</TableCell>
                   <TableCell>
                     <div>
-                      <span className={`font-medium ${item.available_quantity <= item.minimum_stock ? 'text-red-600' : 'text-green-600'}`}>
-                        {item.available_quantity}
-                      </span> / {item.total_quantity} {item.unit}
-                      {item.available_quantity <= item.minimum_stock && (
+                      <span className={`font-medium ${item.quantity <= item.minimum_stock ? 'text-red-600' : 'text-green-600'}`}>
+                        {item.quantity}
+                      </span> {item.unit}
+                      {item.quantity <= item.minimum_stock && (
                         <Badge variant="destructive" className="ml-2">Low Stock</Badge>
                       )}
                     </div>
@@ -164,18 +167,18 @@ export default function AddItemStock() {
           {currentItem && (
             <div className="grid grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="item_name">Item Name</Label>
+                <Label htmlFor="name">Item Name</Label>
                 <Input
-                  id="item_name"
-                  value={currentItem.item_name}
-                  onChange={(e) => setCurrentItem({ ...currentItem, item_name: e.target.value })}
+                  id="name"
+                  value={currentItem.name}
+                  onChange={(e) => setCurrentItem({ ...currentItem, name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category_name">Category</Label>
+                <Label htmlFor="category">Category</Label>
                 <Select 
-                  value={currentItem.category_name} 
-                  onValueChange={(val) => setCurrentItem({ ...currentItem, category_name: val })}
+                  value={currentItem.category} 
+                  onValueChange={(val) => setCurrentItem({ ...currentItem, category: val })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -206,12 +209,12 @@ export default function AddItemStock() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="total_quantity">Total Quantity</Label>
+                <Label htmlFor="quantity">Total Quantity</Label>
                 <Input
-                  id="total_quantity"
+                  id="quantity"
                   type="number"
-                  value={currentItem.total_quantity}
-                  onChange={(e) => setCurrentItem({ ...currentItem, total_quantity: parseInt(e.target.value) })}
+                  value={currentItem.quantity}
+                  onChange={(e) => setCurrentItem({ ...currentItem, quantity: parseInt(e.target.value) })}
                 />
               </div>
               <div className="space-y-2">

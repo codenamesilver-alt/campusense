@@ -57,6 +57,7 @@ export default function FeeHeadDefinition() {
       
       const submitData = {
         ...formData,
+        name: formData.fee_head_name,
         tax_percentage: formData.tax_applicable ? parseFloat(formData.tax_percentage) || 0 : 0
       };
       
@@ -323,7 +324,7 @@ export default function FeeHeadDefinition() {
                         <TableRow key={feeHead.id}>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{feeHead.fee_head_name}</div>
+                              <div className="font-medium">{feeHead.fee_head_name || feeHead.name}</div>
                               {feeHead.description && (
                                 <div className="text-sm text-gray-500 max-w-xs truncate">
                                   {feeHead.description}
@@ -333,12 +334,12 @@ export default function FeeHeadDefinition() {
                           </TableCell>
                           <TableCell>
                             <Badge className={getFrequencyBadge(feeHead.frequency)}>
-                              {feeHead.frequency.replace('_', ' ').toUpperCase()}
+                              {(feeHead.frequency || 'monthly').replace('_', ' ').toUpperCase()}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge className={getApplicabilityBadge(feeHead.applicability)}>
-                              {feeHead.applicability.toUpperCase()}
+                              {(feeHead.applicability || 'compulsory').toUpperCase()}
                             </Badge>
                           </TableCell>
                           <TableCell>

@@ -36,7 +36,7 @@ export default function SearchIncome() {
   const loadData = async () => {
     try {
       const [incomeData, headData] = await Promise.all([
-        Income.list('-date_of_transaction'),
+        Income.list('-created_date'),
         IncomeHead.list()
       ]);
       setIncomes(incomeData);
@@ -50,14 +50,14 @@ export default function SearchIncome() {
   const applyFilters = () => {
     let filtered = incomes;
 
-    if (filters.dateFrom) filtered = filtered.filter(i => new Date(i.date_of_transaction) >= new Date(filters.dateFrom));
-    if (filters.dateTo) filtered = filtered.filter(i => new Date(i.date_of_transaction) <= new Date(filters.dateTo));
-    if (filters.incomeHead) filtered = filtered.filter(i => i.income_head_id === filters.incomeHead);
-    if (filters.amountMin) filtered = filtered.filter(i => i.amount >= parseFloat(filters.amountMin));
-    if (filters.amountMax) filtered = filtered.filter(i => i.amount <= parseFloat(filters.amountMax));
-    if (filters.payerName) filtered = filtered.filter(i => i.payer_name?.toLowerCase().includes(filters.payerName.toLowerCase()));
-    if (filters.paymentMode) filtered = filtered.filter(i => i.payment_mode === filters.paymentMode);
-    if (filters.keyword) filtered = filtered.filter(i => i.description?.toLowerCase().includes(filters.keyword.toLowerCase()));
+    if (filters.dateFrom) filtered = filtered.filter(i => new Date(i.date_of_transaction || i.date) >= new Date(filters.dateFrom));
+    if (filters.dateTo) filtered = filtered.filter(i => new Date(i.date_of_transaction || i.date) <= new Date(filters.dateTo));
+    if (filters.incomeHead) filtered = filtered.filter(i => (i.income_head_name || i.income_head) === filters.incomeHead);
+    if (filters.amountMin) filtered = filtered.filter(i => Number(i.amount) >= parseFloat(filters.amountMin));
+    if (filters.amountMax) filtered = filtered.filter(i => Number(i.amount) <= parseFloat(filters.amountMax));
+    if (filters.payerName) filtered = filtered.filter(i => (i.payer_name || i.received_by || '').toLowerCase().includes(filters.payerName.toLowerCase()));
+    if (filters.paymentMode) filtered = filtered.filter(i => (i.payment_mode || i.payment_method) === filters.paymentMode);
+    if (filters.keyword) filtered = filtered.filter(i => (i.description || '').toLowerCase().includes(filters.keyword.toLowerCase()));
 
     setFilteredIncomes(filtered);
   };
@@ -91,7 +91,7 @@ export default function SearchIncome() {
           <Input type="date" name="dateTo" value={filters.dateTo} onChange={handleFilterChange} />
           <Select name="incomeHead" onValueChange={(v) => handleSelectFilterChange('incomeHead', v)}>
             <SelectTrigger><SelectValue placeholder="Select Income Head" /></SelectTrigger>
-            <SelectContent>{incomeHeads.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{incomeHeads.map(h => <SelectItem key={h.id} value={h.name}>{h.name}</SelectItem>)}</SelectContent>
           </Select>
           <Select name="paymentMode" onValueChange={(v) => handleSelectFilterChange('paymentMode', v)}>
             <SelectTrigger><SelectValue placeholder="Select Payment Mode" /></SelectTrigger>
@@ -134,15 +134,15 @@ export default function SearchIncome() {
             <TableBody>
               {filteredIncomes.map(income => (
                 <TableRow key={income.id}>
-                  <TableCell>{format(new Date(income.date_of_transaction), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{income.income_head_name}</TableCell>
-                  <TableCell>₹{income.amount.toLocaleString()}</TableCell>
-                  <TableCell><Badge variant="secondary">{income.payment_mode.toUpperCase()}</Badge></TableCell>
-                  <TableCell>{income.payer_name || 'N/A'}</TableCell>
+                  <TableCell>{format(new Date(income.date_of_transaction || income.date), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell>{income.income_head_name || income.income_head}</TableCell>
+                  <TableCell>₹{(income.amount || 0).toLocaleString('en-IN')}</TableCell>
+                  <TableCell><Badge variant="secondary">{(income.payment_mode || income.payment_method || 'N/A').toUpperCase()}</Badge></TableCell>
+                  <TableCell>{income.payer_name || income.received_by || 'N/A'}</TableCell>
                   <TableCell>{income.description}</TableCell>
                   <TableCell>
-                    {income.receipt_url && (
-                      <a href={income.receipt_url} target="_blank" rel="noopener noreferrer">
+                    {(income.receipt_url || income.reference) && (
+                      <a href={income.receipt_url || income.reference} target="_blank" rel="noopener noreferrer">
                         <Button variant="link" size="sm">View</Button>
                       </a>
                     )}

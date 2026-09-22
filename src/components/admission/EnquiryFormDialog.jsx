@@ -20,7 +20,7 @@ export default function EnquiryFormDialog({ open, onOpenChange, onSubmit }) {
     enquiry_for_class: '',
     date_of_enquiry: new Date().toISOString().split('T')[0],
     current_school: '',
-    description: '',
+    message: '',
     next_followup_date: '',
     assigned_to_staff: ''
   });
@@ -66,7 +66,7 @@ export default function EnquiryFormDialog({ open, onOpenChange, onSubmit }) {
         enquiry_for_class: '',
         date_of_enquiry: new Date().toISOString().split('T')[0],
         current_school: '',
-        description: '',
+        message: '',
         next_followup_date: '',
         assigned_to_staff: ''
       });
@@ -186,11 +186,11 @@ export default function EnquiryFormDialog({ open, onOpenChange, onSubmit }) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="message">Description</Label>
             <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              id="message"
+              value={formData.message}
+              onChange={(e) => handleInputChange('message', e.target.value)}
               rows={3}
             />
           </div>

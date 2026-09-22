@@ -29,7 +29,7 @@ export default function HouseManagementCard({ houses, onHousesUpdate }) {
 
   const openEditDialog = (house) => {
     setIsEditing(house);
-    setHouseName(house.house_name);
+    setHouseName(house.name);
     setHouseColor(house.house_color || '#ffffff');
     setIsDialogOpen(true);
   };
@@ -42,9 +42,9 @@ export default function HouseManagementCard({ houses, onHousesUpdate }) {
 
     try {
       if (isEditing) {
-        await StudentHouse.update(isEditing.id, { house_name: houseName, house_color: houseColor });
+        await StudentHouse.update(isEditing.id, { name: houseName, house_color: houseColor });
       } else {
-        await StudentHouse.create({ house_name: houseName, house_color: houseColor });
+        await StudentHouse.create({ name: houseName, house_color: houseColor });
       }
       onHousesUpdate();
       setIsDialogOpen(false);
@@ -84,7 +84,7 @@ export default function HouseManagementCard({ houses, onHousesUpdate }) {
                 <li key={house.id} className="flex items-center justify-between p-3 bg-[hsl(var(--muted)/0.5)] rounded-md">
                   <div className="flex items-center gap-3">
                     <div className="w-4 h-4 rounded-full" style={{ backgroundColor: house.house_color }}></div>
-                    <span className="font-medium">{house.house_name}</span>
+                    <span className="font-medium">{house.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" onClick={() => openEditDialog(house)}>

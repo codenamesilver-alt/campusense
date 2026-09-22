@@ -18,12 +18,12 @@ export default function ReportCard() {
   const [reportSettings, setReportSettings] = useState(null);
 
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSection, setSelectedSection] = useState('');
   const [selectedExamGroup, setSelectedExamGroup] = useState('');
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [studentResultsMap, setStudentResultsMap] = useState({}); // { studentId: true/false }
   const [isLoadingResults, setIsLoadingResults] = useState(false);
+
 
   const [isPrinting, setIsPrinting] = useState(false);
 
@@ -33,8 +33,8 @@ export default function ReportCard() {
   }, []);
 
   useEffect(() => {
-    if (selectedClassId) loadSubjectsForClass();
-  }, [selectedClassId]);
+    if (selectedClass) loadSubjectsForClass();
+  }, [selectedClass]);
 
   useEffect(() => {
     if (selectedClass && selectedSection) {
@@ -69,18 +69,23 @@ export default function ReportCard() {
   };
 
   const loadSubjectsForClass = async () => {
-    const subjectGroups = await base44.entities.SubjectGroup.filter({ class_id: selectedClassId });
-    if (subjectGroups.length > 0) {
-      const subjectIds = subjectGroups[0].subject_ids || [];
-      const allSubjects = await base44.entities.Subject.list();
-      setSubjects(allSubjects.filter(s => subjectIds.includes(s.id)));
+    try {
+      const subjectGroups = await base44.entities.SubjectGroup.filter({ class_name: selectedClass });
+      if (subjectGroups.length > 0) {
+        const subjectIds = (subjectGroups[0].subject_ids || []).map(id => String(id));
+        const allSubjects = await base44.entities.Subject.list();
+        setSubjects(allSubjects.filter(s => subjectIds.includes(String(s.id))));
+      } else {
+        setSubjects([]);
+      }
+    } catch (error) {
+      console.error('Error loading subjects:', error);
+      setSubjects([]);
     }
   };
 
   const handleClassChange = (className) => {
-    const classObj = classes.find(c => c.name === className);
     setSelectedClass(className);
-    setSelectedClassId(classObj?.id || '');
     setSelectedStudentIds([]);
   };
 
@@ -89,7 +94,7 @@ export default function ReportCard() {
     const allResults = await fetchAllFiltered('StudentResult', { exam_group_id: selectedExamGroup });
     const map = {};
     students.forEach(s => {
-      map[s.id] = allResults.some(r => r.student_id === s.id);
+      map[s.id] = allResults.some(r => r.student_id === s.id && r.subject_id != null);
     });
     setStudentResultsMap(map);
     setIsLoadingResults(false);
@@ -433,6 +438,48 @@ export default function ReportCard() {
     `;
   };
 
+  const buildLegacyResult = (rows) => {
+    if (!rows || rows.length === 0) return null;
+    const metaRow = rows.find(r => r.subject_id == null);
+    const markRows = rows.filter(r => r.subject_id != null);
+    let meta = null;
+    if (metaRow?.remarks) {
+      try { meta = JSON.parse(metaRow.remarks); } catch (e) { meta = null; }
+    }
+
+    const scholasticFromRows = {};
+    markRows.forEach(r => {
+      scholasticFromRows[String(r.subject_id)] = { total: Number(r.marks_obtained) || 0, grade: r.grade || '' };
+    });
+    const splits = meta?.splits && Object.keys(meta.splits).length > 0 ? meta.splits : scholasticFromRows;
+    const annSplits = meta?.annualSplits && Object.keys(meta.annualSplits).length > 0 ? meta.annualSplits : {};
+    const attendance = meta?.attendance || {};
+    const annAttendance = meta?.annualAttendance || {};
+    const totalDays = Number(attendance.totalDays) || 0;
+    const daysPresent = Number(attendance.daysPresent) || 0;
+    const annTotalDays = Number(annAttendance.totalDays) || 0;
+    const annDaysPresent = Number(annAttendance.daysPresent) || 0;
+    const maxPerTest = Number(meta?.maxMarksPerTest) || 20;
+    const maxMain = Number(meta?.maxMarksHalfYearly) || 80;
+
+    return {
+      scholastic_marks: splits,
+      annual_marks: annSplits,
+      co_scholastic: meta?.coScholastic || {},
+      annual_co_scholastic: meta?.annualCoScholastic || {},
+      total_days: totalDays,
+      days_present: daysPresent,
+      attendance_percentage: totalDays > 0 ? Math.round((daysPresent / totalDays) * 100) : 0,
+      annual_total_days: annTotalDays,
+      annual_days_present: annDaysPresent,
+      annual_attendance_percentage: annTotalDays > 0 ? Math.round((annDaysPresent / annTotalDays) * 100) : 0,
+      teacher_remarks: meta?.teacherRemarks || '',
+      annual_teacher_remarks: meta?.annualTeacherRemarks || '',
+      max_marks_per_test: maxPerTest,
+      max_marks_half_yearly: maxMain
+    };
+  };
+
   const printSelected = async (autoPrint = true) => {
     if (selectedStudentIds.length === 0 || !selectedExamGroup) return;
     setIsPrinting(true);
@@ -511,9 +558,9 @@ export default function ReportCard() {
     `;
 
     const allPagesHtml = selectedStudents.map((student, idx) => {
-      const results = resultsData[idx];
-      if (!results || results.length === 0) return `<p style="color:red;">No result for ${student.first_name} ${student.last_name}</p>`;
-      const result = results[0];
+      const rows = resultsData[idx];
+      const result = buildLegacyResult(rows);
+      if (!result) return `<p style="color:red;">No result for ${student.first_name} ${student.last_name}</p>`;
       const html = buildReportCardHtml(student, result, examGroup);
       // Add page-break-before on page 1 for students after the first
       if (idx === 0) return html;

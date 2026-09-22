@@ -41,10 +41,15 @@ export default function Routes() {
   };
 
   const handleSave = async () => {
+    const payload = {
+      name: currentRoute.name,
+      fee: currentRoute.fee,
+      status: currentRoute.status
+    };
     if (currentRoute.id) {
-      await base44.entities.Route.update(currentRoute.id, currentRoute);
+      await base44.entities.Route.update(currentRoute.id, payload);
     } else {
-      await base44.entities.Route.create(currentRoute);
+      await base44.entities.Route.create(payload);
     }
     fetchData();
     closeDialog();
@@ -59,7 +64,7 @@ export default function Routes() {
 
   const openDialog = (route = null) => {
     setCurrentRoute(route || {
-      name: '', stops: [], vehicle_id: '', driver_id: '', route_fee: 0, status: 'active'
+      name: '', stops: [], vehicle_id: '', driver_id: '', fee: 0, status: 'active'
     });
     setIsDialogOpen(true);
   };
@@ -129,7 +134,7 @@ export default function Routes() {
                     <TableCell>{route.stops?.length || 0}</TableCell>
                     <TableCell>{getVehicleNumber(route.vehicle_id)}</TableCell>
                     <TableCell>{getDriverName(route.driver_id)}</TableCell>
-                    <TableCell>₹{route.route_fee}</TableCell>
+                    <TableCell>₹{route.fee}</TableCell>
                     <TableCell><Badge>{route.status}</Badge></TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(route)}><Edit className="h-4 w-4" /></Button>
@@ -155,7 +160,7 @@ export default function Routes() {
                 </div>
                 <div className="space-y-2">
                   <Label>Route Fee (₹)</Label>
-                  <Input type="number" value={currentRoute.route_fee || 0} onChange={(e) => setCurrentRoute({ ...currentRoute, route_fee: parseFloat(e.target.value) })} />
+                  <Input type="number" value={currentRoute.fee || 0} onChange={(e) => setCurrentRoute({ ...currentRoute, fee: parseFloat(e.target.value) })} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

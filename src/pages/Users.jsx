@@ -60,7 +60,7 @@ export default function Users() {
               ) : (
                 users.map(user => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.full_name}</TableCell>
+                    <TableCell className="font-medium">{[user.first_name, user.last_name].filter(Boolean).join(' ') || user.email}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge className={user.role === 'admin' ? 'bg-red-100 text-red-800' : ''}>

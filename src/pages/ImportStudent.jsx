@@ -25,9 +25,9 @@ export default function ImportStudent() {
   }, []);
 
   const downloadTemplate = () => {
-    const headers = ['admission_number','roll_number','first_name','last_name','class','section','gender','date_of_birth','religion','guardian_phone','guardian_email','admission_date','father_name','mother_name','guardian_name','address','blood_group','house','fees_group'];
+    const headers = ['admission_number','roll_number','first_name','last_name','class','section','gender','date_of_birth','guardian_phone','guardian_email','admission_date','father_name','mother_name','address','blood_group','house'];
     const sampleData = [
-      '202412001,1,John,Doe,5,A,male,15/05/2010,Hindu,9876543210,john.parent@email.com,01/04/2024,Rajesh Doe,Priya Doe,Rajesh Doe,"123 Main St, City",A+,Red House,standard',
+      '202412001,1,John,Doe,5,A,male,15/05/2010,9876543210,john.parent@email.com,01/04/2024,Rajesh Doe,Priya Doe,"123 Main St, City",A+,Red House',
     ];
     const csvContent = [headers.join(','), ...sampleData].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

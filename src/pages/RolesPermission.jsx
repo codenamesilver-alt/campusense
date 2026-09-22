@@ -66,7 +66,7 @@ export default function RolesPermission() {
   useEffect(() => {
     const roleData = allPermissions.find(p => p.role === selectedRole);
     if (roleData) {
-      setPermissions(roleData.permissions);
+      setPermissions(Array.isArray(roleData.permissions) ? roleData.permissions : []);
       setCurrentPermissionDocId(roleData.id);
     } else {
       setPermissions([]);
@@ -85,7 +85,7 @@ export default function RolesPermission() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const data = { role: selectedRole, permissions };
+      const data = { role: selectedRole, permissions: JSON.stringify(Array.isArray(permissions) ? permissions : []) };
       if (currentPermissionDocId) {
         await RolePermission.update(currentPermissionDocId, data);
       } else {
@@ -141,7 +141,7 @@ export default function RolesPermission() {
                   <div key={perm.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={perm.id}
-                      checked={permissions.includes(perm.id) || selectedRole === 'admin'}
+                      checked={(Array.isArray(permissions) && permissions.includes(perm.id)) || selectedRole === 'admin'}
                       onCheckedChange={(checked) => handlePermissionChange(perm.id, checked)}
                       disabled={selectedRole === 'admin'}
                     />

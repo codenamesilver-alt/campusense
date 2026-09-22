@@ -34,6 +34,17 @@ export default function SearchPaidFees() {
     }
   }, [selectedClass, selectedSection, selectedMonth]);
 
+  const getMonthRange = (monthName) => {
+    const monthIndex = months.indexOf(monthName) + 1;
+    const year = new Date().getFullYear();
+    const month = String(monthIndex).padStart(2, '0');
+    const lastDay = new Date(year, monthIndex, 0).getDate();
+    return {
+      start: `${year}-${month}-01`,
+      end: `${year}-${month}-${String(lastDay).padStart(2, '0')}`
+    };
+  };
+
   const loadStudentsAndPayments = async () => {
     try {
       setIsLoading(true);
@@ -45,8 +56,9 @@ export default function SearchPaidFees() {
         status: 'active'
       });
       
-      // Load payment records for the selected month
-      const paymentData = await FeesPayment.filter({ month: selectedMonth });
+      // Load payment records for the selected month (fees_payments has no month column; use payment_date range)
+      const range = getMonthRange(selectedMonth);
+      const paymentData = await FeesPayment.filter({ payment_date: { $gte: range.start, $lte: range.end } });
       
       // Combine student data with payment status
       const studentsWithPaymentStatus = studentData.map(student => {
@@ -247,8 +259,8 @@ export default function SearchPaidFees() {
                 <div><strong>Receipt No:</strong> {receiptDetails.receipt_number}</div>
                 <div><strong>Amount:</strong> ${receiptDetails.amount}</div>
                 <div><strong>Student:</strong> {receiptDetails.student_info ? `${receiptDetails.student_info.first_name} ${receiptDetails.student_info.last_name}` : 'N/A'}</div>
-                <div><strong>Payment Date:</strong> {format(new Date(receiptDetails.payment_date), 'dd/MM/yyyy')}</div>
-                <div><strong>Month:</strong> {receiptDetails.month}</div>
+                <div><strong>Payment Date:</strong> {receiptDetails.payment_date ? format(new Date(receiptDetails.payment_date), 'dd/MM/yyyy') : 'N/A'}</div>
+                <div><strong>Month:</strong> {receiptDetails.payment_date ? format(new Date(receiptDetails.payment_date), 'MMMM') : 'N/A'}</div>
                 <div><strong>Payment Method:</strong> {receiptDetails.payment_method}</div>
               </div>
             </div>

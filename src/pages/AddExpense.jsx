@@ -65,13 +65,13 @@ export default function AddExpense() {
 
   const generateReceiptNumber = async () => {
     try {
-      const allExpenses = await fetchAll('Expense', '-expense_id');
+      const allExpenses = await fetchAll('Expense', '-created_date');
       
       if (allExpenses.length === 0) {
         return 'SRCP00001';
       }
       
-      const lastExpense = allExpenses[0].expense_id;
+      const lastExpense = allExpenses[0].reference;
       const match = lastExpense.match(/SRCP(\d+)/);
       if (match) {
         const lastNumber = parseInt(match[1]);
@@ -97,13 +97,24 @@ export default function AddExpense() {
     setIsSubmitting(true);
     try {
       const selectedHead = expenseHeads.find(h => h.id === formData.expense_head_id);
-      const expenseId = formData.manual_receipt_number.trim() || await generateReceiptNumber();
-      
+      const headName = selectedHead?.name || 'N/A';
+      const refNo = formData.manual_receipt_number || formData.reference_no || (await generateReceiptNumber());
+
       const submissionData = {
-        ...formData,
-        expense_id: expenseId,
-        expense_head_name: selectedHead?.name || 'N/A',
-        amount: parseFloat(formData.amount)
+        expense_head: headName,
+        expense_head_name: headName,
+        amount: parseFloat(formData.amount),
+        date: formData.date_of_expense,
+        date_of_expense: formData.date_of_expense,
+        description: formData.description,
+        payment_method: formData.payment_mode,
+        payment_mode: formData.payment_mode,
+        reference: refNo,
+        paid_by: formData.payee_vendor_name,
+        paid_by_name: formData.payee_vendor_name,
+        attachment_url: formData.bill_invoice_url,
+        receipt_url: formData.bill_invoice_url,
+        status: 'completed'
       };
 
       await base44.entities.Expense.create(submissionData);

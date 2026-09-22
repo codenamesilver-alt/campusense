@@ -1,23 +1,30 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { DivisionConfiguration } from '@/entities/DivisionConfiguration';
 import { Button } from '@/components/ui/button';
 import { Plus, Save, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function MarksDivision() {
-  const [divisions, setDivisions] = useState([
-    { id: '1', name: 'Distinction', minPercentage: 75 },
-    { id: '2', name: 'First Division', minPercentage: 60 },
-    { id: '3', name: 'Second Division', minPercentage: 45 },
-    { id: '4', name: 'Pass', minPercentage: 35 },
-  ]);
+  const [divisions, setDivisions] = useState([]);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDivisionName, setNewDivisionName] = useState('');
   const [newDivisionMinPercentage, setNewDivisionMinPercentage] = useState('');
 
-  const handleSaveNewDivision = () => {
+  useEffect(() => { loadDivisions(); }, []);
+
+  const loadDivisions = async () => {
+    try {
+      const data = await DivisionConfiguration.list();
+      setDivisions(data.map(d => ({ ...d, minPercentage: Number(d.min_percentage) || 0 })).sort((a, b) => b.minPercentage - a.minPercentage));
+    } catch (error) {
+      console.error('Error loading divisions:', error);
+    }
+  };
+
+  const handleSaveNewDivision = async () => {
     if (!newDivisionName.trim() || newDivisionMinPercentage === '') {
       alert('Please fill in all fields.'); // Simple client-side validation
       return;
@@ -35,21 +42,19 @@ export default function MarksDivision() {
         return;
     }
 
-    const newDivision = {
-      id: String(Date.now()), // Simple unique ID generation
-      name: newDivisionName.trim(),
-      minPercentage: percentage,
-    };
-
-    // Add new division and sort by minPercentage in descending order
-    setDivisions(prevDivisions =>
-      [...prevDivisions, newDivision].sort((a, b) => b.minPercentage - a.minPercentage)
-    );
-
-    // Reset form fields and hide form
-    setNewDivisionName('');
-    setNewDivisionMinPercentage('');
-    setShowAddForm(false);
+    try {
+      await DivisionConfiguration.create({
+        name: newDivisionName.trim(),
+        min_percentage: percentage
+      });
+      await loadDivisions();
+      setNewDivisionName('');
+      setNewDivisionMinPercentage('');
+      setShowAddForm(false);
+    } catch (error) {
+      console.error('Error saving division:', error);
+      alert('Error saving division. Please try again.');
+    }
   };
 
   const handleCancelAdd = () => {
@@ -59,9 +64,14 @@ export default function MarksDivision() {
     setShowAddForm(false);
   };
 
-  const handleDeleteDivision = (id) => {
+  const handleDeleteDivision = async (id) => {
     if (window.confirm('Are you sure you want to delete this division?')) {
-      setDivisions(prevDivisions => prevDivisions.filter(division => division.id !== id));
+      try {
+        await DivisionConfiguration.delete(id);
+        setDivisions(prevDivisions => prevDivisions.filter(division => division.id !== id));
+      } catch (error) {
+        console.error('Error deleting division:', error);
+      }
     }
   };
 

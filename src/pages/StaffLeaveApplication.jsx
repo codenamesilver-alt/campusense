@@ -53,7 +53,7 @@ export default function StaffLeaveApplication() {
         const currentStaff = staffList[0];
         setStaff(currentStaff);
         const leaves = await fetchAllFiltered('LeaveApplication', {
-          applicant_id: currentStaff.id,
+          staff_id: currentStaff.id,
           applicant_type: 'staff'
         }, '-created_date');
         setMyLeaves(leaves);
@@ -84,7 +84,7 @@ export default function StaffLeaveApplication() {
     setIsSubmitting(true);
     try {
       await base44.entities.LeaveApplication.create({
-        applicant_id: staff.id,
+        staff_id: staff.id,
         applicant_type: 'staff',
         applicant_name: `${staff.first_name} ${staff.last_name}`,
         start_date: formData.start_date,
@@ -254,10 +254,10 @@ export default function StaffLeaveApplication() {
                       {getStatusBadge(leave.status)}
                     </div>
                     <p className="text-sm">{leave.reason}</p>
-                    {leave.approver_comments && (
+                    {leave.approval_notes && (
                       <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                         <p className="font-medium">Manager's Comment:</p>
-                        <p className="text-gray-700">{leave.approver_comments}</p>
+                        <p className="text-gray-700">{leave.approval_notes}</p>
                       </div>
                     )}
                     <p className="text-xs text-gray-400">

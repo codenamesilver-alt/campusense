@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { fetchAll, fetchAllFiltered } from '@/lib/fetchAll';
-import { generateClassInsights, isAnnualExam, resolveMaxTotal } from '@/lib/aiExamHelpers';
+import { generateClassInsights, isAnnualExam } from '@/lib/aiExamHelpers';
 import { usePermissions } from '@/components/auth/PermissionProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,7 +75,8 @@ export default function ExamInsights() {
         class: selectedClass,
         section: selectedSection,
       });
-      if (results.length === 0) {
+      const markRows = results.filter((r) => r.subject_id != null);
+      if (markRows.length === 0) {
         setError('No results found for the selected class, section and exam. Enter marks first.');
         setIsGenerating(false);
         return;
@@ -87,9 +88,73 @@ export default function ExamInsights() {
       });
       const nameById = {};
       students.forEach((s) => { nameById[s.id] = `${s.first_name} ${s.last_name || ''}`.trim(); });
-      const enriched = results.map((r) => ({ ...r, _studentName: nameById[r.student_id] || 'Unknown' }));
 
-      const maxTotal = resolveMaxTotal(enriched);
+      const parseMeta = (row) => {
+        if (!row?.remarks) return null;
+        try { return JSON.parse(row.remarks); } catch (e) { return null; }
+      };
+
+      const metaByStudent = {};
+      results.forEach((r) => {
+        if (r.subject_id == null) metaByStudent[r.student_id] = r;
+      });
+
+      const rowsByStudent = {};
+      markRows.forEach((r) => {
+        if (!rowsByStudent[r.student_id]) rowsByStudent[r.student_id] = [];
+        rowsByStudent[r.student_id].push(r);
+      });
+
+      const maxTotal = Number(markRows[0].max_marks) || 100;
+
+      const enriched = Object.entries(rowsByStudent).map(([studentId, rows]) => {
+        const metaRow = metaByStudent[studentId];
+        const meta = parseMeta(metaRow);
+        const splits = meta?.splits && Object.keys(meta.splits).length > 0 ? meta.splits : {};
+        const annualSplits = meta?.annualSplits && Object.keys(meta.annualSplits).length > 0 ? meta.annualSplits : {};
+        const scholasticFromRows = {};
+        rows.forEach((r) => {
+          scholasticFromRows[String(r.subject_id)] = {
+            total: Number(r.marks_obtained) || 0,
+            grade: r.grade || '',
+          };
+        });
+        const attendance = meta?.attendance || {};
+        const annualAttendance = meta?.annualAttendance || {};
+        const totalDays = Number(attendance.totalDays) || 0;
+        const daysPresent = Number(attendance.daysPresent) || 0;
+        const annualTotalDays = Number(annualAttendance.totalDays) || 0;
+        const annualDaysPresent = Number(annualAttendance.daysPresent) || 0;
+
+        return {
+          ...rows[0],
+          student_id: studentId,
+          class: selectedClass,
+          section: selectedSection,
+          _studentName: nameById[studentId] || 'Unknown',
+          scholastic_marks: Object.keys(splits).length > 0 ? splits : scholasticFromRows,
+          annual_marks: Object.keys(annualSplits).length > 0 ? annualSplits : scholasticFromRows,
+          co_scholastic: meta?.coScholastic || {},
+          annual_co_scholastic: meta?.annualCoScholastic || {},
+          total_days: totalDays,
+          days_present: daysPresent,
+          attendance_percentage: totalDays > 0 ? Math.round((daysPresent / totalDays) * 100) : 0,
+          annual_total_days: annualTotalDays,
+          annual_days_present: annualDaysPresent,
+          annual_attendance_percentage: annualTotalDays > 0 ? Math.round((annualDaysPresent / annualTotalDays) * 100) : 0,
+          teacher_remarks: meta?.teacherRemarks || '',
+          annual_teacher_remarks: meta?.annualTeacherRemarks || '',
+          max_marks_per_test: Number(meta?.maxMarksPerTest) || 20,
+          max_marks_half_yearly: Number(meta?.maxMarksHalfYearly) || maxTotal - (Number(meta?.maxMarksPerTest) || 20),
+        };
+      });
+
+      if (enriched.length === 0) {
+        setError('No results found for the selected class, section and exam. Enter marks first.');
+        setIsGenerating(false);
+        return;
+      }
+
       const data = await generateClassInsights({
         examGroupName: examGroup?.name,
         className: selectedClass,

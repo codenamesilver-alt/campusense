@@ -157,7 +157,7 @@ export default function StudentDashboard() {
                 {feesDue.slice(0, 3).map((fee) => (
                   <div key={fee.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium">{fee.fee_head_name}</p>
+                      <p className="font-medium">{fee.fee_type || fee.fee_head_name || 'Fee'}</p>
                       <p className="text-sm text-gray-500">Due: {format(new Date(fee.due_date), 'MMM dd, yyyy')}</p>
                     </div>
                     <Badge variant="destructive">₹{fee.balance_amount}</Badge>

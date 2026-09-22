@@ -65,13 +65,13 @@ export default function AddIncome() {
 
   const generateReceiptNumber = async () => {
     try {
-      const allIncomes = await fetchAll('Income', '-transaction_id');
+      const allIncomes = await fetchAll('Income', '-created_date');
       
       if (allIncomes.length === 0) {
         return 'SRCP00001';
       }
       
-      const lastIncome = allIncomes[0].transaction_id;
+      const lastIncome = allIncomes[0].reference;
       const match = lastIncome.match(/SRCP(\d+)/);
       if (match) {
         const lastNumber = parseInt(match[1]);
@@ -97,13 +97,23 @@ export default function AddIncome() {
     setIsSubmitting(true);
     try {
       const selectedHead = incomeHeads.find(h => h.id === formData.income_head_id);
-      const transactionId = formData.manual_receipt_number.trim() || await generateReceiptNumber();
-      
+      const headName = selectedHead?.name || 'N/A';
+      const refNo = formData.manual_receipt_number || formData.reference_no || (await generateReceiptNumber());
+
       const submissionData = {
-        ...formData,
-        transaction_id: transactionId,
-        income_head_name: selectedHead?.name || 'N/A',
-        amount: parseFloat(formData.amount)
+        income_head: headName,
+        income_head_name: headName,
+        amount: parseFloat(formData.amount),
+        date: formData.date_of_transaction,
+        date_of_transaction: formData.date_of_transaction,
+        description: formData.description,
+        payment_method: formData.payment_mode,
+        payment_mode: formData.payment_mode,
+        reference: refNo,
+        received_by: formData.payer_name,
+        payer_name: formData.payer_name,
+        receipt_url: formData.receipt_url || refNo,
+        status: 'completed'
       };
 
       await base44.entities.Income.create(submissionData);

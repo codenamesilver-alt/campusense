@@ -266,7 +266,7 @@ export default function FeeCollection() {
         late_fine: 0,
         net_amount: totalAmount,
         fee_details: JSON.stringify(duesWithPayment.map(due => ({
-          fee_head_name: due.fee_head_name,
+          fee_head_name: due.fee_head_name || due.fee_type || 'Fee',
           amount: due.paying_now,
           due_date: due.due_date,
           is_partial: due.paying_now < due.balance_amount
@@ -294,16 +294,16 @@ export default function FeeCollection() {
       if (oneTimeDiscount > 0) {
         const discountRecord = {
           student_id: selectedStudent.id,
+          student_name: `${selectedStudent.first_name} ${selectedStudent.last_name}`,
+          discount_amount: oneTimeDiscount,
           discount_type: 'one_time',
+          description: paymentData.one_time_discount_reason,
+          status: 'active',
           discount_mode: 'fixed_amount',
           fixed_amount: oneTimeDiscount,
           reason: paymentData.one_time_discount_reason,
-          approved_by: 'current_user', // TODO: Make dynamic
-          applicable_fee_heads: selectedDues.map(d => d.fee_head_id).join(','),
           valid_from: paymentData.receipt_date,
-          valid_to: paymentData.receipt_date,
-          approval_date: paymentData.receipt_date,
-          status: 'active'
+          valid_to: paymentData.receipt_date
         };
         
         await base44.entities.StudentDiscount.create(discountRecord);
@@ -666,9 +666,9 @@ export default function FeeCollection() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <div className={`font-medium ${isPaid ? 'line-through text-gray-400' : ''}`}>{due.fee_head_name}</div>
-                                {due.due_month && <div className="text-xs text-gray-400">{due.due_month} {due.due_year}</div>}
-                                {isPartial && <div className="text-xs text-orange-500">Partially paid — ₹{(due.due_amount - due.balance_amount).toLocaleString('en-IN')} received so far</div>}
+                                <div className={`font-medium ${isPaid ? 'line-through text-gray-400' : ''}`}>{due.fee_type || due.fee_head_name || 'Fee'}</div>
+                                {due.due_date && <div className="text-xs text-gray-400">{new Date(due.due_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div>}
+                                {isPartial && <div className="text-xs text-orange-500">Partially paid — ₹{(due.amount - due.balance_amount).toLocaleString('en-IN')} received so far</div>}
                                 {isPaid && due.status === 'waived' && <div className="text-xs text-purple-500">Waived</div>}
                               </TableCell>
                               <TableCell>
@@ -676,7 +676,7 @@ export default function FeeCollection() {
                               </TableCell>
                               <TableCell>
                                 <div className={`font-medium ${isPaid ? 'text-gray-400' : ''}`}>
-                                  ₹{due.due_amount?.toLocaleString('en-IN') ?? due.balance_amount.toLocaleString('en-IN')}
+                                  ₹{due.amount?.toLocaleString('en-IN') ?? due.balance_amount.toLocaleString('en-IN')}
                                 </div>
                                 {isPaid && <div className="text-xs text-green-600">Paid: ₹{(due.paid_amount || 0).toLocaleString('en-IN')}</div>}
                               </TableCell>

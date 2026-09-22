@@ -317,7 +317,7 @@ const NavigationContent = () => {
 
         {user && (
           <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(0,245,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-            <p className="text-sm font-mono font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>{user.full_name}</p>
+            <p className="text-sm font-mono font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>{[user.first_name, user.last_name].filter(Boolean).join(' ') || user.email}</p>
             <p className="text-xs font-mono capitalize" style={{ color: '#a855f7' }}>{user.role}</p>
           </div>
         )}
@@ -423,7 +423,7 @@ const NavigationContent = () => {
             <Menu className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-black font-mono" style={{ color: '#00f5ff', textShadow: '0 0 10px rgba(0,245,255,0.4)' }}>
-            {(location.pathname === '/' || location.pathname === createPageUrl('Dashboard')) ? `WELCOME, ${(user?.full_name || 'USER').toUpperCase()}${staffDesignation ? ` (${staffDesignation.toUpperCase()})` : ''}` : 'CAMPUSENSE'}
+            {(location.pathname === '/' || location.pathname === createPageUrl('Dashboard')) ? `WELCOME, ${([user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'USER').toUpperCase()}${staffDesignation ? ` (${staffDesignation.toUpperCase()})` : ''}` : 'CAMPUSENSE'}
           </h1>
         </header>
 

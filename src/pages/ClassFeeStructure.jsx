@@ -172,13 +172,36 @@ export default function ClassFeeStructurePage() {
       return;
     }
 
+    const selectedClass = classes.find(c => c.name === formData.class);
+    const selectedSection = formData.section === 'all'
+      ? null
+      : sections.find(s => s.name === formData.section);
+    const selectedHead = feeHeads.find(h => h.id === formData.fee_head_id);
+
+    if (!selectedClass) {
+      alert('Please select a valid class');
+      return;
+    }
+
+    if (!selectedHead) {
+      alert('Please select a valid fee head');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
+      const isMonthly = (selectedHead.frequency || 'once') === 'monthly';
+
       const submitData = {
-        ...formData,
-        section: formData.section === 'all' ? '' : formData.section,
-        amount: parseFloat(formData.amount)
+        class_id: selectedClass.id,
+        section_id: selectedSection ? selectedSection.id : null,
+        fee_head_id: formData.fee_head_id,
+        amount: parseFloat(formData.amount),
+        frequency: selectedHead.frequency || 'once',
+        academic_year: formData.academic_year,
+        enabled: formData.enabled !== undefined ? formData.enabled : true,
+        due_date: isMonthly ? null : (formData.due_date || null)
       };
       
       console.log('Submitting fee structure:', submitData);
@@ -213,15 +236,22 @@ export default function ClassFeeStructurePage() {
   };
 
   const handleEdit = (structure) => {
+    const editedClass = classes.find(c => c.id === structure.class_id);
+    const editedSection = sections.find(s => s.id === structure.section_id);
+    const editedHead = feeHeads.find(h => h.id === structure.fee_head_id);
+    let dueDateValue = structure.due_date || '';
+    if (dueDateValue && typeof dueDateValue === 'string' && dueDateValue.length > 10) {
+      dueDateValue = dueDateValue.slice(0, 10);
+    }
     setFormData({
-      class: structure.class,
-      section: structure.section ? structure.section : 'all',
+      class: editedClass?.name || '',
+      section: editedSection?.name || 'all',
       fee_head_id: structure.fee_head_id,
-      fee_head_name: structure.fee_head_name,
-      amount: structure.amount.toString(),
-      enabled: structure.enabled,
-      due_date: structure.due_date || '',
-      academic_year: structure.academic_year
+      fee_head_name: editedHead?.fee_head_name || editedHead?.name || '',
+      amount: structure.amount ? structure.amount.toString() : '',
+      enabled: structure.enabled !== undefined ? structure.enabled : true,
+      due_date: dueDateValue,
+      academic_year: structure.academic_year || ''
     });
     setEditingId(structure.id);
   };
@@ -245,15 +275,25 @@ export default function ClassFeeStructurePage() {
       return;
     }
 
+    const sourceSection = copySource.section === 'all' ? '' : copySource.section;
+    const targetSection = copyTarget.section === 'all' ? '' : copyTarget.section;
+
+    const sourceClassId = classes.find(c => c.name === copySource.class)?.id;
+    const targetClassId = classes.find(c => c.name === copyTarget.class)?.id;
+    const sourceSectionId = sourceSection ? sections.find(s => s.name === sourceSection)?.id : null;
+    const targetSectionId = targetSection ? sections.find(s => s.name === targetSection)?.id : null;
+
+    if (!sourceClassId || !targetClassId) {
+      alert('Please select valid source and target classes');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
-      const sourceSection = copySource.section === 'all' ? '' : copySource.section;
-      const targetSection = copyTarget.section === 'all' ? '' : copyTarget.section;
-      
       const sourceStructures = feeStructures.filter(s => 
-        s.class === copySource.class && 
-        (copySource.section === 'all' || s.section === sourceSection)
+        s.class_id === sourceClassId && 
+        (copySource.section === 'all' || s.section_id === sourceSectionId)
       );
 
       if (sourceStructures.length === 0) {
@@ -264,8 +304,8 @@ export default function ClassFeeStructurePage() {
       for (const structure of sourceStructures) {
         const newStructure = {
           ...structure,
-          class: copyTarget.class,
-          section: copyTarget.section === 'all' ? structure.section : targetSection
+          class_id: targetClassId,
+          section_id: copyTarget.section === 'all' ? structure.section_id : targetSectionId
         };
         delete newStructure.id;
         delete newStructure.created_date;
@@ -301,6 +341,10 @@ export default function ClassFeeStructurePage() {
     });
     setEditingId(null);
   };
+
+  const getClassName = (id) => classes.find(c => c.id === id)?.name || 'Unknown';
+  const getSectionName = (id) => sections.find(s => s.id === id)?.name || '';
+  const getFeeHeadName = (id) => feeHeads.find(h => h.id === id)?.fee_head_name || 'Unknown';
 
   return (
     <div className="space-y-6">
@@ -453,7 +497,7 @@ export default function ClassFeeStructurePage() {
                     <SelectContent>
                       {feeHeads.map(head => (
                         <SelectItem key={head.id} value={head.id}>
-                          {head.fee_head_name} ({head.frequency.replace('_', ' ')})
+                          {head.fee_head_name || head.name} ({(head.frequency || 'once').replace('_', ' ')})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -582,7 +626,7 @@ export default function ClassFeeStructurePage() {
                       <TableHead>Class/Section</TableHead>
                       <TableHead>Fee Head</TableHead>
                       <TableHead>Amount</TableHead>
-                      <TableHead>Due Date</TableHead>
+                      <TableHead>Frequency</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -599,15 +643,15 @@ export default function ClassFeeStructurePage() {
                         <TableRow key={structure.id}>
                           <TableCell>
                             <div className="font-medium">
-                              Class {structure.class}
-                              {structure.section ? ` - ${structure.section}` : ' - All Sections'}
+                              Class {getClassName(structure.class_id)}
+                              {getSectionName(structure.section_id) ? ` - ${getSectionName(structure.section_id)}` : ' - All Sections'}
                             </div>
                             <div className="text-sm text-gray-500">
                               AY: {structure.academic_year}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium text-sm">{structure.fee_head_name}</div>
+                            <div className="font-medium text-sm">{getFeeHeadName(structure.fee_head_id)}</div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
@@ -615,8 +659,8 @@ export default function ClassFeeStructurePage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm">
-                              {structure.due_date || 'Not set'}
+                            <span className="text-sm capitalize">
+                              {structure.frequency || 'once'}
                             </span>
                           </TableCell>
                           <TableCell>

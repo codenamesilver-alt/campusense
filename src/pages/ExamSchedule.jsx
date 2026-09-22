@@ -50,10 +50,10 @@ export default function ExamSchedule() {
   const getSubjectsForClass = (className) => {
     const cls = classes.find(c => c.name === className);
     if (!cls) return [];
-    const groups = subjectGroups.filter(sg => sg.class_id === cls.id);
+    const groups = subjectGroups.filter(sg => sg.class_name === cls.name);
     const subjectIds = [...new Set(groups.flatMap(g => g.subject_ids || []))];
     return subjectIds
-      .map(sid => subjects.find(s => s.id === sid)?.name)
+      .map(sid => subjects.find(s => String(s.id) === String(sid))?.name)
       .filter(Boolean);
   };
 

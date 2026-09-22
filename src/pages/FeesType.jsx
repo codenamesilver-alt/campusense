@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FeesType } from '@/entities/FeesType';
+import { FeesGroup } from '@/entities/FeesGroup';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +13,10 @@ import { format } from 'date-fns';
 
 export default function FeesTypePage() {
   const [feesTypes, setFeesTypes] = useState([]);
+  const [feesGroups, setFeesGroups] = useState([]);
   const [formData, setFormData] = useState({
-    fees_type_name: '',
+    name: '',
+    fees_group_id: '',
     description: ''
   });
   const [editingId, setEditingId] = useState(null);
@@ -21,6 +24,7 @@ export default function FeesTypePage() {
 
   useEffect(() => {
     loadFeesTypes();
+    loadFeesGroups();
   }, []);
 
   const loadFeesTypes = async () => {
@@ -29,6 +33,15 @@ export default function FeesTypePage() {
       setFeesTypes(data);
     } catch (error) {
       console.error('Error loading fees types:', error);
+    }
+  };
+
+  const loadFeesGroups = async () => {
+    try {
+      const data = await FeesGroup.list('-created_date');
+      setFeesGroups(data);
+    } catch (error) {
+      console.error('Error loading fees groups:', error);
     }
   };
 
@@ -42,23 +55,29 @@ export default function FeesTypePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.fees_type_name.trim()) {
+    if (!formData.name.trim()) {
       alert('Please enter fees type name');
       return;
     }
 
     try {
       setIsLoading(true);
+
+      const submitData = {
+        name: formData.name,
+        fees_group_id: formData.fees_group_id ? Number(formData.fees_group_id) : null,
+        description: formData.description
+      };
       
       if (editingId) {
-        await FeesType.update(editingId, formData);
+        await FeesType.update(editingId, submitData);
         alert('Fees type updated successfully!');
       } else {
-        await FeesType.create(formData);
+        await FeesType.create(submitData);
         alert('Fees type added successfully!');
       }
       
-      setFormData({ fees_type_name: '', description: '' });
+      setFormData({ name: '', fees_group_id: '', description: '' });
       setEditingId(null);
       loadFeesTypes();
     } catch (error) {
@@ -71,7 +90,8 @@ export default function FeesTypePage() {
 
   const handleEdit = (feesType) => {
     setFormData({
-      fees_type_name: feesType.fees_type_name,
+      name: feesType.name,
+      fees_group_id: feesType.fees_group_id?.toString() || '',
       description: feesType.description || ''
     });
     setEditingId(feesType.id);
@@ -91,7 +111,7 @@ export default function FeesTypePage() {
   };
 
   const cancelEdit = () => {
-    setFormData({ fees_type_name: '', description: '' });
+    setFormData({ name: '', fees_group_id: '', description: '' });
     setEditingId(null);
   };
 
@@ -117,14 +137,30 @@ export default function FeesTypePage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fees_type_name">Fees Type Name *</Label>
+                  <Label htmlFor="name">Fees Type Name *</Label>
                   <Input
-                    id="fees_type_name"
+                    id="name"
                     placeholder="e.g., Admission Fees, Monthly Fees, Exam Fees"
-                    value={formData.fees_type_name}
-                    onChange={(e) => handleInputChange('fees_type_name', e.target.value)}
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fees_group_id">Fees Group</Label>
+                  <Select value={formData.fees_group_id} onValueChange={(value) => handleInputChange('fees_group_id', value)}>
+                    <SelectTrigger id="fees_group_id">
+                      <SelectValue placeholder="Select fees group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {feesGroups.map(group => (
+                        <SelectItem key={group.id} value={group.id.toString()}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -184,7 +220,7 @@ export default function FeesTypePage() {
                   key={index}
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleInputChange('fees_type_name', suggestion)}
+                  onClick={() => handleInputChange('name', suggestion)}
                   className="w-full justify-start text-left h-auto py-1"
                 >
                   {suggestion}
@@ -223,7 +259,7 @@ export default function FeesTypePage() {
                       feesTypes.map((feesType) => (
                         <TableRow key={feesType.id}>
                           <TableCell>
-                            <div className="font-medium">{feesType.fees_type_name}</div>
+                            <div className="font-medium">{feesType.name}</div>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-gray-600 max-w-xs truncate">

@@ -211,7 +211,7 @@ export default function FeeNotifications() {
     if (notificationData.includeDueDate && studentDues.length > 0) {
       message += `\n\nDue Details:`;
       studentDues.forEach(due => {
-        message += `\n- ${due.fee_head_name}: ₹${due.balance_amount} (Due: ${format(new Date(due.due_date), 'dd/MM/yyyy')})`;
+        message += `\n- ${due.fee_type || due.fee_head_name || 'Fee'}: ₹${due.balance_amount} (Due: ${format(new Date(due.due_date), 'dd/MM/yyyy')})`;
       });
     }
     

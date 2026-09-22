@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { fetchAllFiltered } from '@/lib/fetchAll';
-import { generateStudentRemark, isAnnualExam, resolveMaxTotal } from '@/lib/aiExamHelpers';
+import { generateStudentRemark, isAnnualExam } from '@/lib/aiExamHelpers';
 import { usePermissions } from '@/components/auth/PermissionProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,37 +49,93 @@ export default function RemarksWriterPanel({ selectedClass, selectedSection, exa
         status: 'active',
       });
       const allResults = await fetchAllFiltered('StudentResult', { exam_group_id: examGroup.id });
-      const resultByStudent = {};
-      allResults.forEach((r) => { resultByStudent[r.student_id] = r; });
 
-      const maxTotal = resolveMaxTotal(allResults);
+      const parseMeta = (row) => {
+        if (!row?.remarks) return null;
+        try { return JSON.parse(row.remarks); } catch (e) { return null; }
+      };
+
+      const metaByStudent = {};
+      const markRowsByStudent = {};
+      allResults.forEach((r) => {
+        if (r.subject_id == null) metaByStudent[r.student_id] = r;
+        else {
+          if (!markRowsByStudent[r.student_id]) markRowsByStudent[r.student_id] = [];
+          markRowsByStudent[r.student_id].push(r);
+        }
+      });
+
+      const markRowsAll = allResults.filter((r) => r.subject_id != null);
+      const maxTotal = Number(markRowsAll[0]?.max_marks) || 100;
+
+      const buildLegacyView = (student) => {
+        const rows = markRowsByStudent[student.id] || [];
+        const metaRow = metaByStudent[student.id];
+        const meta = parseMeta(metaRow);
+        const splits = meta?.splits && Object.keys(meta.splits).length > 0 ? meta.splits : {};
+        const annualSplits = meta?.annualSplits && Object.keys(meta.annualSplits).length > 0 ? meta.annualSplits : {};
+        const scholasticFromRows = {};
+        rows.forEach((r) => {
+          scholasticFromRows[String(r.subject_id)] = {
+            total: Number(r.marks_obtained) || 0,
+            grade: r.grade || '',
+          };
+        });
+        const attendance = meta?.attendance || {};
+        const annualAttendance = meta?.annualAttendance || {};
+        const totalDays = Number(attendance.totalDays) || 0;
+        const daysPresent = Number(attendance.daysPresent) || 0;
+        const annualTotalDays = Number(annualAttendance.totalDays) || 0;
+        const annualDaysPresent = Number(annualAttendance.daysPresent) || 0;
+
+        return {
+          metaRow,
+          meta,
+          markRows: rows,
+          class: student.class,
+          section: student.section,
+          scholastic_marks: Object.keys(splits).length > 0 ? splits : scholasticFromRows,
+          annual_marks: Object.keys(annualSplits).length > 0 ? annualSplits : scholasticFromRows,
+          co_scholastic: meta?.coScholastic || {},
+          annual_co_scholastic: meta?.annualCoScholastic || {},
+          total_days: totalDays,
+          days_present: daysPresent,
+          attendance_percentage: totalDays > 0 ? Math.round((daysPresent / totalDays) * 100) : 0,
+          annual_total_days: annualTotalDays,
+          annual_days_present: annualDaysPresent,
+          annual_attendance_percentage: annualTotalDays > 0 ? Math.round((annualDaysPresent / annualTotalDays) * 100) : 0,
+          teacher_remarks: meta?.teacherRemarks || '',
+          annual_teacher_remarks: meta?.annualTeacherRemarks || '',
+        };
+      };
+
       const eligible = [];
       const skipped = [];
       students.forEach((s) => {
-        const r = resultByStudent[s.id];
-        const marksObj = isAnnual ? r?.annual_marks : r?.scholastic_marks;
-        if (!r || !marksObj || Object.keys(marksObj).length === 0) {
-          skipped.push({ student: s, reason: 'No marks entered' });
+        const view = buildLegacyView(s);
+        const marksObj = isAnnual ? view.annual_marks : view.scholastic_marks;
+        if (!marksObj || Object.keys(marksObj).length === 0) {
+          skipped.push({ student: s, view, reason: 'No marks entered' });
           return;
         }
-        eligible.push({ student: s, result: r });
+        eligible.push({ student: s, view });
       });
 
       // initialise rows (skipped + pending)
       setRows([
-        ...skipped.map((x) => ({ student: x.student, result: x.result, remark: '', status: 'skipped' })),
-        ...eligible.map((x) => ({ student: x.student, result: x.result, remark: '', status: 'pending' })),
+        ...skipped.map((x) => ({ student: x.student, result: x.view, remark: '', status: 'skipped' })),
+        ...eligible.map((x) => ({ student: x.student, result: x.view, remark: '', status: 'pending' })),
       ]);
 
       // generate sequentially with progress
-      const generated = [...skipped.map((x) => ({ student: x.student, result: x.result, remark: '', status: 'skipped' }))];
+      const generated = [...skipped.map((x) => ({ student: x.student, result: x.view, remark: '', status: 'skipped' }))];
       for (let i = 0; i < eligible.length; i++) {
-        const { student, result } = eligible[i];
+        const { student, view } = eligible[i];
         try {
-          const remark = await generateStudentRemark({ student, result, subjects, isAnnual, maxTotal });
-          generated.push({ student, result, remark, status: 'generated' });
+          const remark = await generateStudentRemark({ student, result: view, subjects, isAnnual, maxTotal });
+          generated.push({ student, result: view, remark, status: 'generated' });
         } catch (e) {
-          generated.push({ student, result, remark: '', status: 'error' });
+          generated.push({ student, result: view, remark: '', status: 'error' });
         }
         setProgress(i + 1);
         setRows([...generated]);
@@ -104,10 +160,37 @@ export default function RemarksWriterPanel({ selectedClass, selectedSection, exa
     try {
       let count = 0;
       for (const row of toSave) {
-        const patch = isAnnual
-          ? { annual_teacher_remarks: row.remark }
-          : { teacher_remarks: row.remark };
-        await base44.entities.StudentResult.update(row.result.id, patch);
+        const meta = row.result?.meta ? { ...row.result.meta } : {};
+        if (isAnnual) {
+          meta.annualTeacherRemarks = row.remark;
+        } else {
+          meta.teacherRemarks = row.remark;
+        }
+
+        const payload = {
+          student_id: row.student.id,
+          student_name: `${row.student.first_name || ''} ${row.student.last_name || ''}`.trim(),
+          exam_group_id: examGroup.id,
+          exam_group_name: examGroup.name || '',
+          class: selectedClass,
+          section: selectedSection,
+          subject_id: null,
+          subject_name: 'EXAM_META',
+          max_marks: null,
+          marks_obtained: null,
+          percentage: null,
+          grade: null,
+          remarks: JSON.stringify(meta),
+          status: 'saved'
+        };
+
+        if (row.result?.metaRow) {
+          await base44.entities.StudentResult.update(row.result.metaRow.id, { remarks: payload.remarks });
+        } else {
+          const created = await base44.entities.StudentResult.create(payload);
+          row.result.metaRow = created;
+          row.result.meta = meta;
+        }
         count += 1;
         setSaveProgress(count);
       }

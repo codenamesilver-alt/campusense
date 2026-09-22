@@ -30,16 +30,16 @@ export default function FinanceDashboard() {
       const currentMonthStart = startOfMonth(today);
       
       const [allIncomes, allExpenses] = await Promise.all([
-        Income.list('-date_of_transaction'),
-        Expense.list('-date_of_expense')
+        Income.list('-created_date'),
+        Expense.list('-created_date')
       ]);
 
       // Stats for current month
-      const currentMonthIncomes = allIncomes.filter(i => new Date(i.date_of_transaction) >= currentMonthStart);
-      const currentMonthExpenses = allExpenses.filter(e => new Date(e.date_of_expense) >= currentMonthStart);
+      const currentMonthIncomes = allIncomes.filter(i => new Date(i.date_of_transaction || i.date) >= currentMonthStart);
+      const currentMonthExpenses = allExpenses.filter(e => new Date(e.date_of_expense || e.date) >= currentMonthStart);
       
-      const totalIncome = currentMonthIncomes.reduce((sum, i) => sum + i.amount, 0);
-      const totalExpense = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalIncome = currentMonthIncomes.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+      const totalExpense = currentMonthExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
       setStats({
         totalIncome,
@@ -59,12 +59,12 @@ export default function FinanceDashboard() {
         const monthEnd = endOfMonth(month);
 
         const monthIncome = allIncomes
-          .filter(inc => new Date(inc.date_of_transaction) >= monthStart && new Date(inc.date_of_transaction) <= monthEnd)
-          .reduce((sum, inc) => sum + inc.amount, 0);
+          .filter(inc => new Date(inc.date_of_transaction || inc.date) >= monthStart && new Date(inc.date_of_transaction || inc.date) <= monthEnd)
+          .reduce((sum, inc) => sum + Number(inc.amount || 0), 0);
 
         const monthExpense = allExpenses
-          .filter(exp => new Date(exp.date_of_expense) >= monthStart && new Date(exp.date_of_expense) <= monthEnd)
-          .reduce((sum, exp) => sum + exp.amount, 0);
+          .filter(exp => new Date(exp.date_of_expense || exp.date) >= monthStart && new Date(exp.date_of_expense || exp.date) <= monthEnd)
+          .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
 
         chartData.push({
           month: format(month, 'MMM'),
@@ -83,8 +83,8 @@ export default function FinanceDashboard() {
 
   const calculateTopCategories = (data, categoryField) => {
     const categoryMap = data.reduce((acc, item) => {
-      const category = item[categoryField];
-      acc[category] = (acc[category] || 0) + item.amount;
+      const category = item[categoryField] || item.income_head || item.expense_head || 'Other';
+      acc[category] = (acc[category] || 0) + Number(item.amount || 0);
       return acc;
     }, {});
 

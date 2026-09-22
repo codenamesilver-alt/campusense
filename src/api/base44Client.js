@@ -37,6 +37,16 @@ const parseJsonField = (item) => {
       return item;
     }
   }
+  if (item && typeof item.permissions === 'string' && item.permissions.trim().startsWith('[')) {
+    try {
+      const parsed = JSON.parse(item.permissions);
+      if (Array.isArray(parsed)) {
+        return { ...item, permissions: parsed.map((v) => String(v)) };
+      }
+    } catch (e) {
+      return item;
+    }
+  }
   return item;
 };
 

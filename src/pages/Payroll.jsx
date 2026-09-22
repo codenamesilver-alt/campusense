@@ -23,7 +23,13 @@ const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
 function buildPayslipHTML(staffMember, payrollData, monthLabel) {
-  const totalDeductions = (Number(payrollData.pf_deduction) + Number(payrollData.tax_deduction) + Number(payrollData.other_deduction));
+  const basicSalary = Number(payrollData.basic_salary || 0);
+  const allowances = Number(payrollData.allowances || 0) ||
+    (Number(payrollData.hra || 0) + Number(payrollData.transport_allowance || 0) + Number(payrollData.other_allowance || 0));
+  const deductions = Number(payrollData.deductions || 0) ||
+    (Number(payrollData.pf_deduction || 0) + Number(payrollData.tax_deduction || 0) + Number(payrollData.other_deduction || 0));
+  const grossSalary = Number(payrollData.gross_salary || 0) || (basicSalary + allowances);
+  const netSalary = Number(payrollData.net_salary || 0) || (grossSalary - deductions);
   return `
     <html>
       <head>
@@ -74,30 +80,22 @@ function buildPayslipHTML(staffMember, payrollData, monthLabel) {
               <th>Deductions</th><th style="text-align:right;">Amount (₹)</th>
             </tr>
             <tr>
-              <td>Basic Salary</td><td style="text-align:right;">${Number(payrollData.basic_salary).toFixed(2)}</td>
-              <td>PF Deduction</td><td style="text-align:right;">${Number(payrollData.pf_deduction).toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td>HRA</td><td style="text-align:right;">${Number(payrollData.hra).toFixed(2)}</td>
-              <td>Tax Deduction (TDS)</td><td style="text-align:right;">${Number(payrollData.tax_deduction).toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td>Transport Allowance</td><td style="text-align:right;">${Number(payrollData.transport_allowance).toFixed(2)}</td>
-              <td>Other Deductions</td><td style="text-align:right;">${Number(payrollData.other_deduction).toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td>Other Allowance</td><td style="text-align:right;">${Number(payrollData.other_allowance).toFixed(2)}</td>
+              <td>Basic Salary</td><td style="text-align:right;">${basicSalary.toFixed(2)}</td>
               <td></td><td></td>
             </tr>
+            <tr>
+              <td>Allowances</td><td style="text-align:right;">${allowances.toFixed(2)}</td>
+              <td>Total Deductions</td><td style="text-align:right;">${deductions.toFixed(2)}</td>
+            </tr>
             <tr class="total-row">
-              <td>Gross Salary</td><td style="text-align:right;">₹${Number(payrollData.gross_salary).toFixed(2)}</td>
-              <td>Total Deductions</td><td style="text-align:right;">₹${totalDeductions.toFixed(2)}</td>
+              <td>Gross Salary</td><td style="text-align:right;">₹${grossSalary.toFixed(2)}</td>
+              <td></td><td></td>
             </tr>
           </table>
         </div>
         <div class="net-salary">
-          NET SALARY: ₹${Number(payrollData.net_salary).toFixed(2)}
-          <br><small>(Rupees ${Math.floor(Number(payrollData.net_salary)).toLocaleString('en-IN')} only)</small>
+          NET SALARY: ₹${netSalary.toFixed(2)}
+          <br><small>(Rupees ${Math.floor(netSalary).toLocaleString('en-IN')} only)</small>
         </div>
         <p style="margin-top:30px;font-size:10px;text-align:center;color:#666;">
           This is a computer-generated payslip and does not require a signature.
@@ -155,26 +153,20 @@ function EnterPayroll({ staff }) {
     setSavedMsg('');
     try {
       const [year] = month.split('-');
-      const monthLabel = format(new Date(month + '-01'), 'MMMM yyyy');
+      const totalAllowances = +payrollData.hra + +payrollData.transport_allowance + +payrollData.other_allowance;
       const totalDeductions = +payrollData.pf_deduction + +payrollData.tax_deduction + +payrollData.other_deduction;
 
-      const existing = await base44.entities.PayrollRecord.filter({ staff_id: selectedStaff, payroll_month: month });
+      const existing = await base44.entities.PayrollRecord.filter({ staff_id: selectedStaff, month });
       const record = {
         staff_id: selectedStaff,
         staff_name: `${staffMember.first_name} ${staffMember.last_name}`,
-        staff_code: staffMember.staff_id,
-        designation: staffMember.designation || '',
-        department: staffMember.department || '',
-        pan_number: staffMember.pan_number || '',
-        pf_number: staffMember.pf_number || '',
-        bank_account_number: staffMember.bank_account_number || '',
-        bank_name: staffMember.bank_name || '',
-        payroll_month: month,
-        payroll_year: year,
-        payroll_month_label: monthLabel,
-        ...payrollData,
-        total_deductions: totalDeductions,
-        status: 'generated'
+        month,
+        year,
+        basic_salary: +payrollData.basic_salary,
+        allowances: totalAllowances,
+        deductions: totalDeductions,
+        net_salary: +payrollData.net_salary,
+        payment_status: 'generated'
       };
 
       if (existing.length > 0) {
@@ -313,7 +305,7 @@ function ViewPayroll({ staff }) {
     setNotFound(false);
     try {
       const monthKey = `${selectedYear}-${selectedMonth}`;
-      const results = await base44.entities.PayrollRecord.filter({ staff_id: selectedStaff, payroll_month: monthKey });
+      const results = await base44.entities.PayrollRecord.filter({ staff_id: selectedStaff, month: monthKey });
       if (results.length > 0) {
         setRecord(results[0]);
       } else {
@@ -329,8 +321,20 @@ function ViewPayroll({ staff }) {
   const handleView = () => {
     if (!record) return;
     const w = window.open('', '_blank');
-    w.document.write(buildPayslipHTML(record, record, record.payroll_month_label));
+    const monthLabel = format(new Date(record.month + '-01'), 'MMMM yyyy');
+    w.document.write(buildPayslipHTML(record, record, monthLabel));
     w.document.close();
+  };
+
+  const handleMarkPaid = async () => {
+    if (!record) return;
+    const paymentDate = new Date().toISOString().split('T')[0];
+    await base44.entities.PayrollRecord.update(record.id, {
+      payment_status: 'paid',
+      payment_date: paymentDate
+    });
+    setRecord({ ...record, payment_status: 'paid', payment_date: paymentDate });
+    alert('Payroll marked as paid');
   };
 
   return (
@@ -406,10 +410,15 @@ function ViewPayroll({ staff }) {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5"/>
-              Salary Slip — {record.payroll_month_label}
+              Salary Slip — {format(new Date(record.month + '-01'), 'MMMM yyyy')}
             </CardTitle>
             <div className="flex items-center gap-3">
-              <Badge variant={record.status === 'paid' ? 'default' : 'secondary'} className="capitalize">{record.status}</Badge>
+              <Badge variant={record.payment_status === 'paid' ? 'default' : 'secondary'} className="capitalize">{record.payment_status}</Badge>
+              {record.payment_status !== 'paid' && (
+                <Button variant="outline" onClick={handleMarkPaid}>
+                  Mark as Paid
+                </Button>
+              )}
               <Button onClick={handleView}>
                 <Download className="mr-2 h-4 w-4"/>View & Download
               </Button>
@@ -418,13 +427,9 @@ function ViewPayroll({ staff }) {
           <CardContent className="space-y-6">
             <div className="p-4 bg-gray-50 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
               <div><p className="text-gray-500">Name</p><p className="font-semibold">{record.staff_name}</p></div>
-              <div><p className="text-gray-500">Staff ID</p><p className="font-semibold">{record.staff_code}</p></div>
-              <div><p className="text-gray-500">Designation</p><p className="font-semibold">{record.designation || '—'}</p></div>
-              <div><p className="text-gray-500">Department</p><p className="font-semibold">{record.department || '—'}</p></div>
-              <div><p className="text-gray-500">PAN Number</p><p className="font-semibold">{record.pan_number || '—'}</p></div>
-              <div><p className="text-gray-500">PF Account No.</p><p className="font-semibold">{record.pf_number || '—'}</p></div>
-              <div><p className="text-gray-500">Bank Name</p><p className="font-semibold">{record.bank_name || '—'}</p></div>
-              <div><p className="text-gray-500">Account Number</p><p className="font-semibold">{record.bank_account_number || '—'}</p></div>
+              <div><p className="text-gray-500">Staff ID</p><p className="font-semibold">{record.staff_id}</p></div>
+              <div><p className="text-gray-500">Payment Status</p><p className="font-semibold capitalize">{record.payment_status || '—'}</p></div>
+              <div><p className="text-gray-500">Payment Date</p><p className="font-semibold">{record.payment_date || '—'}</p></div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -432,15 +437,15 @@ function ViewPayroll({ staff }) {
                 <h4 className="font-semibold text-green-700 mb-3 border-b pb-1">Earnings</h4>
                 <table className="w-full text-sm">
                   <tbody>
-                    {[['Basic Salary', record.basic_salary], ['HRA', record.hra], ['Transport Allowance', record.transport_allowance], ['Other Allowance', record.other_allowance]].map(([label, val]) => (
+                    {[['Basic Salary', record.basic_salary], ['Allowances', record.allowances]].map(([label, val]) => (
                       <tr key={label} className="border-b last:border-0">
                         <td className="py-2 text-gray-600">{label}</td>
-                        <td className="py-2 text-right font-medium">₹{Number(val || 0).toLocaleString()}</td>
+                        <td className="py-2 text-right font-medium">₹{Number(val || 0).toLocaleString('en-IN')}</td>
                       </tr>
                     ))}
                     <tr className="font-bold text-green-700">
                       <td className="py-2">Gross Salary</td>
-                      <td className="py-2 text-right">₹{Number(record.gross_salary || 0).toLocaleString()}</td>
+                      <td className="py-2 text-right">₹{Number(Number(record.basic_salary || 0) + Number(record.allowances || 0)).toLocaleString('en-IN')}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -449,15 +454,9 @@ function ViewPayroll({ staff }) {
                 <h4 className="font-semibold text-red-700 mb-3 border-b pb-1">Deductions</h4>
                 <table className="w-full text-sm">
                   <tbody>
-                    {[['PF Deduction', record.pf_deduction], ['Tax Deduction (TDS)', record.tax_deduction], ['Other Deductions', record.other_deduction]].map(([label, val]) => (
-                      <tr key={label} className="border-b last:border-0">
-                        <td className="py-2 text-gray-600">{label}</td>
-                        <td className="py-2 text-right font-medium">₹{Number(val || 0).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                    <tr className="font-bold text-red-700">
-                      <td className="py-2">Total Deductions</td>
-                      <td className="py-2 text-right">₹{Number(record.total_deductions || 0).toLocaleString()}</td>
+                    <tr className="border-b last:border-0">
+                      <td className="py-2 text-gray-600">Total Deductions</td>
+                      <td className="py-2 text-right font-medium">₹{Number(record.deductions || 0).toLocaleString('en-IN')}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -466,8 +465,8 @@ function ViewPayroll({ staff }) {
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
               <p className="text-blue-600 text-sm font-medium mb-1">Net Salary</p>
-              <p className="text-4xl font-bold text-blue-700">₹{Number(record.net_salary || 0).toLocaleString()}</p>
-              <p className="text-blue-500 text-sm mt-1">Generated on: {record.payroll_month_label}</p>
+              <p className="text-4xl font-bold text-blue-700">₹{Number(record.net_salary || 0).toLocaleString('en-IN')}</p>
+              <p className="text-blue-500 text-sm mt-1">Generated on: {format(new Date(record.month + '-01'), 'MMMM yyyy')}</p>
             </div>
           </CardContent>
         </Card>

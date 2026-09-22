@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { fetchAllFiltered } from '@/lib/fetchAll';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,7 +20,6 @@ export default function ResultAnalysis() {
   const [results, setResults] = useState([]);
 
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSection, setSelectedSection] = useState('');
   const [selectedExamGroup, setSelectedExamGroup] = useState('');
 
@@ -29,6 +27,7 @@ export default function ResultAnalysis() {
   const [gradeDistribution, setGradeDistribution] = useState([]);
   const [topPerformers, setTopPerformers] = useState([]);
   const [classStats, setClassStats] = useState({ avg: 0, highest: 0, lowest: 0, passRate: 0, totalStudents: 0 });
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,10 +36,10 @@ export default function ResultAnalysis() {
   }, []);
 
   useEffect(() => {
-    if (selectedClassId) {
+    if (selectedClass) {
       loadSubjectsForClass();
     }
-  }, [selectedClassId]);
+  }, [selectedClass]);
 
   useEffect(() => {
     if (selectedClass && selectedSection && selectedExamGroup) {
@@ -60,18 +59,24 @@ export default function ResultAnalysis() {
   };
 
   const loadSubjectsForClass = async () => {
-    const subjectGroups = await base44.entities.SubjectGroup.filter({ class_id: selectedClassId });
-    if (subjectGroups.length > 0) {
-      const subjectIds = subjectGroups[0].subject_ids || [];
-      const allSubjects = await base44.entities.Subject.list();
-      setSubjects(allSubjects.filter(s => subjectIds.includes(s.id)));
+    try {
+      const subjectGroups = await base44.entities.SubjectGroup.filter({ class_name: selectedClass });
+      if (subjectGroups.length > 0) {
+        const subjectIds = (subjectGroups[0].subject_ids || []).map(id => String(id));
+        const allSubjects = await base44.entities.Subject.list();
+        setSubjects(allSubjects.filter(s => subjectIds.includes(String(s.id))));
+      } else {
+        setSubjects([]);
+      }
+    } catch (error) {
+      console.error('Error loading subjects:', error);
+      setSubjects([]);
     }
   };
 
   const handleClassChange = (className) => {
-    const classObj = classes.find(c => c.name === className);
     setSelectedClass(className);
-    setSelectedClassId(classObj?.id || '');
+    setSelectedStudent(null);
   };
 
   const loadResultsAndAnalyze = async () => {
@@ -90,17 +95,14 @@ export default function ResultAnalysis() {
   };
 
   const analyzeResults = (studentData, resultData) => {
-    if (resultData.length === 0) {
+    const markRows = resultData.filter(r => r.subject_id != null);
+    if (markRows.length === 0) {
       setSubjectStats([]);
       setGradeDistribution([]);
       setTopPerformers([]);
       setClassStats({ avg: 0, highest: 0, lowest: 0, passRate: 0, totalStudents: 0 });
       return;
     }
-
-    const maxPerTest = resultData[0]?.max_marks_per_test || 20;
-    const maxHalfYearly = resultData[0]?.max_marks_half_yearly || 80;
-    const maxTotal = maxPerTest + maxHalfYearly;
 
     // Subject-wise analysis
     const subjectAnalysis = {};
@@ -113,43 +115,47 @@ export default function ResultAnalysis() {
 
     // Student totals for top performers
     const studentTotals = [];
+    const studentTotalsMap = {};
 
-    resultData.forEach(result => {
-      const scholasticMarks = result.scholastic_marks || {};
-      let studentTotal = 0;
-      let subjectCount = 0;
-      let studentGrades = [];
+    markRows.forEach(row => {
+      const total = Number(row.marks_obtained) || 0;
+      const maxTotal = Number(row.max_marks) || 100;
+      const percentage = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
 
-      Object.entries(scholasticMarks).forEach(([subjectId, data]) => {
-        if (subjectAnalysis[subjectId]) {
-          const total = data.total || 0;
-          subjectAnalysis[subjectId].marks.push(total);
-          
-          const percentage = (total / maxTotal) * 100;
-          if (percentage >= 33) {
-            subjectAnalysis[subjectId].passed++;
-          } else {
-            subjectAnalysis[subjectId].failed++;
-          }
-          
-          studentTotal += total;
-          subjectCount++;
-          if (data.grade) {
-            studentGrades.push(data.grade);
-            grades[data.grade] = (grades[data.grade] || 0) + 1;
-          }
-        }
-      });
+      const subjectKey = row.subject_id;
+      if (!subjectAnalysis[subjectKey]) {
+        subjectAnalysis[subjectKey] = { name: row.subject_name || 'Unknown', marks: [], passed: 0, failed: 0 };
+      }
+      subjectAnalysis[subjectKey].marks.push(total);
+      if (percentage >= 33) {
+        subjectAnalysis[subjectKey].passed++;
+      } else {
+        subjectAnalysis[subjectKey].failed++;
+      }
 
-      const student = studentData.find(s => s.id === result.student_id);
-      if (student && subjectCount > 0) {
-        const avgPercentage = (studentTotal / (subjectCount * maxTotal)) * 100;
+      if (row.grade) {
+        grades[row.grade] = (grades[row.grade] || 0) + 1;
+      }
+
+      if (!studentTotalsMap[row.student_id]) {
+        studentTotalsMap[row.student_id] = { total: 0, max: 0, count: 0 };
+      }
+      const st = studentTotalsMap[row.student_id];
+      st.total += total;
+      st.max += maxTotal;
+      st.count++;
+    });
+
+    Object.entries(studentTotalsMap).forEach(([studentId, st]) => {
+      const student = studentData.find(s => s.id === studentId);
+      if (student && st.count > 0) {
+        const avgPercentage = st.max > 0 ? (st.total / st.max) * 100 : 0;
         studentTotals.push({
           name: `${student.first_name} ${student.last_name}`,
           rollNo: student.roll_number,
-          total: studentTotal,
+          total: st.total,
           percentage: avgPercentage,
-          maxPossible: subjectCount * maxTotal
+          maxPossible: st.max
         });
       }
     });
@@ -262,7 +268,7 @@ export default function ResultAnalysis() {
 
       {isLoading && <Card><CardContent className="py-8 text-center">Loading analysis...</CardContent></Card>}
 
-      {!isLoading && selectedClass && selectedSection && selectedExamGroup && results.length > 0 && (
+      {!isLoading && selectedClass && selectedSection && selectedExamGroup && results.some(r => r.subject_id != null) && (
         <>
           {/* Class Overview Stats */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -434,7 +440,7 @@ export default function ResultAnalysis() {
         </>
       )}
 
-      {!isLoading && selectedClass && selectedSection && selectedExamGroup && results.length === 0 && (
+      {!isLoading && selectedClass && selectedSection && selectedExamGroup && !results.some(r => r.subject_id != null) && (
         <Card className="border-yellow-200">
           <CardContent className="py-8 text-center text-yellow-800">
             No results found for the selected class, section, and exam. Please enter marks first.

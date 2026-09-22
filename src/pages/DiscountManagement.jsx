@@ -126,19 +126,24 @@ export default function DiscountManagement() {
     try {
       setIsLoading(true);
       
+      const discountValue = formData.discount_mode === 'fixed_amount'
+        ? parseFloat(formData.fixed_amount)
+        : parseFloat(formData.percentage) || 0;
+
       const discountData = {
         student_id: selectedStudent.id,
+        fee_head_id: formData.applicable_fee_heads[0] || null,
+        student_name: `${selectedStudent.first_name} ${selectedStudent.last_name}`,
+        discount_amount: discountValue,
         discount_type: formData.discount_type,
+        description: formData.reason,
+        status: 'active',
         discount_mode: formData.discount_mode,
         percentage: formData.discount_mode === 'percentage' ? parseFloat(formData.percentage) : null,
         fixed_amount: formData.discount_mode === 'fixed_amount' ? parseFloat(formData.fixed_amount) : null,
         reason: formData.reason,
-        approved_by: formData.approved_by,
-        applicable_fee_heads: formData.applicable_fee_heads.join(','),
         valid_from: formData.valid_from,
-        valid_to: formData.discount_type === 'one_time' ? formData.valid_to : null,
-        approval_date: new Date().toISOString().split('T')[0],
-        status: 'active'
+        valid_to: formData.discount_type === 'one_time' ? formData.valid_to : null
       };
       
       await StudentDiscount.create(discountData);
