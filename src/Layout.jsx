@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { PermissionProvider, usePermissions, usePermission } from "@/components/auth/PermissionProvider";
+import { useAuth } from "@/lib/AuthContext";
 
 const allNavigationItems = [
   {
@@ -226,6 +227,7 @@ const allNavigationItems = [
 
 const NavigationContent = () => {
   const { user, permissions, loading, isAdmin } = usePermissions();
+  const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({});
   const [staffDesignation, setStaffDesignation] = useState('');
@@ -398,10 +400,7 @@ const NavigationContent = () => {
 
         <div className="px-4 py-4 border-t" style={{ borderColor: 'rgba(0,245,255,0.1)' }}>
           <button
-            onClick={async () => {
-              const { base44 } = await import('@/api/base44Client');
-              base44.auth.logout();
-            }}
+            onClick={() => logout()}
             className="nav-item flex items-center gap-3 w-full px-4 py-3 text-sm font-mono rounded-lg transition-all duration-200"
             style={{ color: 'rgba(255,255,255,0.6)', border: '1px solid transparent' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,107,53,0.1)'; e.currentTarget.style.color = '#ff6b35'; e.currentTarget.style.borderColor = 'rgba(255,107,53,0.3)'; }}
