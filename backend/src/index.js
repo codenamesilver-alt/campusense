@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const crudRoutes = require('./routes/crud');
 const authRoutes = require('./routes/auth');
 const integrationRoutes = require('./routes/integrations');
@@ -25,6 +27,15 @@ app.use('/api/integrations/Core', integrationRoutes);
 app.use('/api/entities', crudRoutes);
 app.use('/api/functions', functionRoutes);
 app.use('/api/approvals', approvalRoutes);
+
+// Serve built frontend (production only)
+const distDir = path.join(__dirname, '..', 'dist');
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir));
+  app.get(/^\/(?!api\/).*/, (req, res) => {
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+}
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
