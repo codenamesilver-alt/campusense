@@ -1,5 +1,12 @@
 require('dotenv').config();
 
+const pgOptions = {
+  ssl: { rejectUnauthorized: false },
+  statement_timeout: 20000,
+  query_timeout: 20000,
+  connectionTimeoutMillis: 10000
+};
+
 const base = {
   client: 'pg',
   migrations: {
@@ -8,7 +15,8 @@ const base = {
   seeds: {
     directory: './src/seeds'
   },
-  pool: { min: 0, max: 5 }
+  pool: { min: 1, max: 10 },
+  acquireConnectionTimeout: 15000
 };
 
 module.exports = {
@@ -17,7 +25,7 @@ module.exports = {
     connection: process.env.DATABASE_URL
       ? {
           connectionString: process.env.DATABASE_URL,
-          ssl: { rejectUnauthorized: false }
+          ...pgOptions
         }
       : {
           host: process.env.DB_HOST || 'localhost',
@@ -31,7 +39,7 @@ module.exports = {
     ...base,
     connection: {
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      ...pgOptions
     }
   }
 };
