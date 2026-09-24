@@ -47,7 +47,20 @@ const ALL_PERMISSIONS = {
   ]
 };
 
-const ROLES = ["admin", "user", "teacher", "accountant", "receptionist", "student", "parent"];
+const ROLES = ["admin", "user", "teacher", "accountant", "receptionist", "student", "parent", "principal"];
+
+function parsePermissions(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      return [value];
+    }
+  }
+  return [];
+}
 
 export default function RolesPermission() {
   const [selectedRole, setSelectedRole] = useState('teacher');
@@ -66,7 +79,7 @@ export default function RolesPermission() {
   useEffect(() => {
     const roleData = allPermissions.find(p => p.role === selectedRole);
     if (roleData) {
-      setPermissions(Array.isArray(roleData.permissions) ? roleData.permissions : []);
+      setPermissions(parsePermissions(roleData.permissions));
       setCurrentPermissionDocId(roleData.id);
     } else {
       setPermissions([]);

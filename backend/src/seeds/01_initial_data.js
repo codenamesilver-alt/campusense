@@ -128,7 +128,7 @@ exports.seed = async function (knex) {
     { role: 'admin', permissions: JSON.stringify(['*']) },
     { role: 'teacher', permissions: JSON.stringify(['students:view', 'attendance:mark', 'attendance:view', 'exam:results', 'exam:view', 'timetable:view', 'notices:view', 'notices:create', 'reports:view']) },
     { role: 'student', permissions: JSON.stringify(['students:view', 'attendance:view', 'exam:view', 'notices:view', 'fees:view']) },
-    { role: 'accountant', permissions: JSON.stringify(['students:view', 'fees:collect', 'fees:view', 'income:manage', 'expense:manage', 'reports:view']) },
+    { role: 'accountant', permissions: JSON.stringify(['students:view', 'fees:collect', 'fees:view', 'income:manage', 'expense:manage', 'reports:view', 'reports:read']) },
     { role: 'principal', permissions: JSON.stringify(['students:view', 'staff:view', 'attendance:view', 'exam:view', 'reports:view', 'notices:create', 'timetable:view']) }
   ]);
 };

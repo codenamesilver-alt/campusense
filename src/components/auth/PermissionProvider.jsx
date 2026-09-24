@@ -16,6 +16,19 @@ export const usePermission = (requiredPermission) => {
   return hasPermission(requiredPermission);
 };
 
+const parsePermissions = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      return [value];
+    }
+  }
+  return [];
+};
+
 export const PermissionProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [permissions, setPermissions] = useState([]);
@@ -36,8 +49,7 @@ export const PermissionProvider = ({ children }) => {
         // Try to load role permissions
         try {
           const rolePermissions = await base44.entities.RolePermission.filter({ role: currentUser.role });
-          const userPermissions = rolePermissions.length > 0 ? rolePermissions[0].permissions : [];
-          setPermissions(userPermissions);
+          setPermissions(parsePermissions(rolePermissions.length > 0 ? rolePermissions[0].permissions : []));
         } catch (permError) {
           console.error('Error loading role permissions:', permError);
           setPermissions([]);
