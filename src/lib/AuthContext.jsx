@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { supabase } from '@/lib/supabase';
 
 const AuthContext = createContext();
 
@@ -21,10 +20,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setAuthError(null);
 
-      if (typeof window !== 'undefined' && window.location.pathname === '/auth/callback') {
-        await handleOAuthCallback();
-        return;
-      }
+      if (typeof window === 'undefined') return;
 
       const savedToken = localStorage.getItem('campusense_token');
       const savedUser = localStorage.getItem('campusense_user');
@@ -50,54 +46,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('App state check failed:', error);
       setAuthError({ type: 'unknown', message: error.message });
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    }
-  };
-
-  const handleOAuthCallback = async () => {
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error || !data.session || !data.session.user?.email) {
-        throw error || new Error('No session');
-      }
-
-      const u = data.session.user;
-      const meta = u.user_metadata || {};
-      const fullName = meta.full_name || meta.name || '';
-      const parts = fullName.split(' ').filter(Boolean);
-
-      const res = await base44.auth.google({
-        access_token: data.session.access_token,
-        email: u.email,
-        first_name: parts[0] || '',
-        last_name: parts.slice(1).join(' '),
-        avatar_url: meta.avatar_url || meta.picture || null
-      });
-
-      setUser(res.user);
-      setIsAuthenticated(true);
-      setAuthError(null);
-      sessionStorage.removeItem('campusense_auth_notice');
-      if (typeof window !== 'undefined') {
-        window.location.replace('/');
-        return;
-      }
-    } catch (err) {
-      console.error('OAuth callback failed:', err);
-      const serverMessage = err.response?.data?.error;
-      if (serverMessage) {
-        sessionStorage.setItem('campusense_auth_notice', serverMessage);
-      }
-      setAuthError({
-        type: 'auth_required',
-        message: serverMessage || 'Google sign-in failed. Try again.'
-      });
-      if (typeof window !== 'undefined') {
-        window.location.replace('/');
-        return;
-      }
-    } finally {
       setIsLoadingAuth(false);
       setAuthChecked(true);
     }

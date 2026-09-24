@@ -1,14 +1,8 @@
 const express = require('express');
-const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const { authenticate, JWT_SECRET } = require('../middleware/auth');
-
-const supabase = require('@supabase/supabase-js').createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 const router = express.Router();
 
@@ -30,80 +24,6 @@ router.post('/login', async (req, res, next) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    if (user.status !== 'active') {
-      return res.status(403).json({ error: 'Account is not active' });
-    }
-
-    if (user.role === PENDING_ROLE) {
-      return res.status(403).json({ error: PENDING_MESSAGE });
-    }
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        phone: user.phone,
-        role: user.role,
-        staff_id: user.staff_id
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/google', async (req, res, next) => {
-  try {
-    const { access_token, first_name, last_name } = req.body || {};
-    if (!access_token) {
-      return res.status(400).json({ error: 'Access token required' });
-    }
-
-    const { data, error } = await supabase.auth.getUser(access_token);
-    if (error || !data.user?.email) {
-      return res.status(401).json({ error: 'Invalid Google session' });
-    }
-
-    const providerUser = data.user;
-    const meta = providerUser.user_metadata || {};
-    const fullName = meta.full_name || meta.name || '';
-    const parts = fullName.split(' ').filter(Boolean);
-
-    const normalizedEmail = providerUser.email.toLowerCase().trim();
-    let user = await db('users').where({ email: normalizedEmail }).first();
-    const fName = first_name || parts[0] || '';
-    const lName = last_name || parts.slice(1).join(' ') || '';
-
-    if (!user) {
-      const password_hash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
-      const rows = await db('users').insert({
-        email: normalizedEmail,
-        password_hash,
-        first_name: fName,
-        last_name: lName,
-        role: 'user',
-        status: 'active'
-      }).returning('*');
-      user = rows[0];
-    } else {
-      const patch = {};
-      if (!user.first_name && fName) patch.first_name = fName;
-      if (!user.last_name && lName) patch.last_name = lName;
-      if (Object.keys(patch).length) {
-        await db('users').where({ id: user.id }).update(patch);
-        user = { ...user, ...patch };
-      }
     }
 
     if (user.status !== 'active') {

@@ -143,12 +143,6 @@ const auth = {
     localStorage.setItem('campusense_user', JSON.stringify(res.data.user));
     return res.data;
   },
-  async google(profile) {
-    const res = await api.post('/auth/google', profile);
-    localStorage.setItem('campusense_token', res.data.token);
-    localStorage.setItem('campusense_user', JSON.stringify(res.data.user));
-    return res.data;
-  },
   logout(shouldRedirect = false) {
     localStorage.removeItem('campusense_token');
     localStorage.removeItem('campusense_user');
