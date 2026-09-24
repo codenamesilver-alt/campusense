@@ -92,7 +92,7 @@ router.post('/google', async (req, res, next) => {
         password_hash,
         first_name: fName,
         last_name: lName,
-        role: 'pending',
+        role: 'user',
         status: 'active'
       }).returning('*');
       user = rows[0];
