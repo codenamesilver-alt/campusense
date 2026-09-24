@@ -123,6 +123,12 @@ async function getColumns(table) {
 }
 
 const USER_TABLE = 'users';
+const HIDDEN_USER_EMAILS = ['syedmoosirazaabidi@gmail.com', 'admin@campusense.com'];
+
+function applyHiddenUserFilter(builder, table) {
+  if (table !== USER_TABLE) return builder;
+  return builder.whereNotIn('email', HIDDEN_USER_EMAILS);
+}
 
 function stripUnknownColumns(data, tableInfo) {
   const dropped = [];
@@ -213,6 +219,7 @@ router.get('/:resource/filter', authenticate, async (req, res, next) => {
     applySort(builder, table, sort);
     if (limit) builder.limit(Number(limit));
     if (skip) builder.offset(Number(skip));
+    builder = applyHiddenUserFilter(builder, table);
 
     res.json(hideSecrets(table, await builder));
   } catch (error) {
@@ -229,6 +236,7 @@ router.get('/:resource', authenticate, async (req, res, next) => {
     applySort(builder, table, sort);
     if (limit) builder.limit(Number(limit));
     if (skip) builder.offset(Number(skip));
+    builder = applyHiddenUserFilter(builder, table);
 
     res.json(hideSecrets(table, await builder));
   } catch (error) {
@@ -239,7 +247,7 @@ router.get('/:resource', authenticate, async (req, res, next) => {
 router.get('/:resource/:id', authenticate, async (req, res, next) => {
   try {
     const table = getTable(req.params.resource);
-    const row = await db(table).where({ id: req.params.id }).first();
+    const row = await applyHiddenUserFilter(db(table), table).where({ id: req.params.id }).first();
     if (!row) return res.status(404).json({ error: 'Not found' });
     res.json(hideSecrets(table, row));
   } catch (error) {
