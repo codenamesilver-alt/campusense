@@ -108,7 +108,7 @@ export default function FeeNotifications() {
         (due.status === 'pending' || due.status === 'overdue') &&
         new Date(due.due_date) < today
       );
-      const totalOverdue = studentDues.reduce((sum, due) => sum + due.balance_amount, 0);
+      const totalOverdue = studentDues.reduce((sum, due) => sum + Number(due.balance_amount || 0), 0);
       const daysPastDue = Math.max(...studentDues.map(due => 
         differenceInDays(today, new Date(due.due_date))
       ));
@@ -137,7 +137,7 @@ export default function FeeNotifications() {
         new Date(due.due_date) >= today &&
         new Date(due.due_date) <= addDays(today, 7)
       );
-      const totalDue = studentDues.reduce((sum, due) => sum + due.balance_amount, 0);
+      const totalDue = studentDues.reduce((sum, due) => sum + Number(due.balance_amount || 0), 0);
       
       return {
         ...student,
@@ -380,7 +380,7 @@ CAMPUSENSE School`
               <div>
                 <p className="text-sm text-gray-500">Total Overdue Amount</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  ₹{overdueStudents.reduce((sum, s) => sum + s.totalOverdue, 0).toLocaleString()}
+                  ₹{overdueStudents.reduce((sum, s) => sum + Number(s.totalOverdue || 0), 0).toLocaleString('en-IN')}
                 </p>
               </div>
             </div>
