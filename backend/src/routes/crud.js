@@ -89,20 +89,22 @@ const ADMIN_WRITE_RESOURCES = new Set([
 const APPROVAL_REQUEST_TABLE = 'approval_requests';
 const APPROVAL_AUDIT_FIELDS = ['status', 'reviewed_by', 'reviewed_at', 'admin_comment'];
 
-function requireCreateAdminForResource(resource) {
+function requireCreateAdminForResource(req, res, next) {
+  const { resource } = req.params;
   const table = RESOURCE_TABLE_MAP[resource];
   if (ADMIN_WRITE_RESOURCES.has(table)) {
-    return requireAdmin;
+    return requireAdmin(req, res, next);
   }
-  return (req, res, next) => next();
+  return next();
 }
 
-function requireMutateAdminForResource(resource) {
+function requireMutateAdminForResource(req, res, next) {
+  const { resource } = req.params;
   const table = RESOURCE_TABLE_MAP[resource];
   if (ADMIN_WRITE_RESOURCES.has(table) || table === APPROVAL_REQUEST_TABLE) {
-    return requireAdmin;
+    return requireAdmin(req, res, next);
   }
-  return (req, res, next) => next();
+  return next();
 }
 
 function forceApprovalAuditFields(table, data) {
@@ -254,7 +256,6 @@ router.post('/:resource', authenticate, requireCreateAdminForResource, async (re
       data.id = Number(data.id);
     }
 
-    // Auto insert created_date if table has it and not provided
     const tableInfo = await db(table).columnInfo();
     stripUnknownColumns(data, tableInfo);
     normalizeUserData(table, data);
@@ -313,7 +314,6 @@ router.patch('/:resource/:id', authenticate, requireMutateAdminForResource, asyn
       if (Object.keys(data).length === 0) {
         return res.status(400).json({ error: 'No editable fields provided' });
       }
-      // Audit fields are only writable via the approve/reject endpoints
       delete data.status;
       delete data.reviewed_by;
       delete data.reviewed_at;
