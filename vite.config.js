@@ -4,6 +4,12 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    watch: {
+      // Skip files locked by other apps (e.g. image editors) so chokidar doesn't crash with EBUSY
+      ignored: ['**/src/assets/tahaa.png'],
+    },
+  },
   plugins: [
     base44({
       // Support for legacy code that imports the base44 SDK with @/integrations, @/entities, etc.
