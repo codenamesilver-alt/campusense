@@ -38,7 +38,12 @@
     "late_fine": {
       "type": "number",
       "default": 0,
-      "description": "Late fine if applicable"
+      "description": "Total late fine accrued on the selected dues before waiver"
+    },
+    "late_fine_waived": {
+      "type": "number",
+      "default": 0,
+      "description": "Portion of the late fine waived at collection time"
     },
     "tax_amount": {
       "type": "number",

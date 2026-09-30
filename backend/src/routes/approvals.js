@@ -8,6 +8,7 @@ const APPLY_FIELD_MAP = {
   total_amount: 'total_amount',
   discount_amount: 'discount_amount',
   late_fine: 'late_fine',
+  late_fine_waived: 'late_fine_waived',
   tax_amount: 'tax_amount',
   net_amount: 'net_amount',
   payment_mode: 'payment_mode',
