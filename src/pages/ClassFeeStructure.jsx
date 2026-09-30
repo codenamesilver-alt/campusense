@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Edit, Trash2, School, IndianRupee, AlertCircle } from 'lucide-react';
+import { Copy, Edit, Trash2, School, IndianRupee, AlertCircle, Calendar } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { format } from 'date-fns';
 
 export default function ClassFeeStructurePage() {
   const [feeStructures, setFeeStructures] = useState([]);
@@ -626,6 +627,7 @@ export default function ClassFeeStructurePage() {
                       <TableHead>Class/Section</TableHead>
                       <TableHead>Fee Head</TableHead>
                       <TableHead>Amount</TableHead>
+                      <TableHead>Due Date</TableHead>
                       <TableHead>Frequency</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -634,7 +636,7 @@ export default function ClassFeeStructurePage() {
                   <TableBody>
                     {feeStructures.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                           No fee structures found. Create your first fee structure assignment.
                         </TableCell>
                       </TableRow>
@@ -657,6 +659,18 @@ export default function ClassFeeStructurePage() {
                             <div className="flex items-center gap-1">
                               <span className="font-medium">₹{structure.amount.toLocaleString('en-IN')}</span>
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {structure.due_date ? (
+                              <div className="flex items-center gap-1 text-sm">
+                                <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                                <span>
+                                  {format(new Date(String(structure.due_date).slice(0, 10) + 'T00:00:00'), 'dd MMM, yyyy')}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">Monthly/by day</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <span className="text-sm capitalize">

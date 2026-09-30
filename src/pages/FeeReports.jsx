@@ -229,6 +229,25 @@ export default function FeeReports() {
     }
   };
 
+  const getFeeDescription = (transaction) => {
+    let feeDetails = [];
+    try {
+      feeDetails = typeof transaction.fee_details === 'string'
+        ? JSON.parse(transaction.fee_details || '[]')
+        : (transaction.fee_details || []);
+      if (!Array.isArray(feeDetails)) feeDetails = [];
+    } catch {
+      feeDetails = [];
+    }
+
+    const names = feeDetails
+      .map(f => f && f.fee_head_name)
+      .filter(Boolean);
+
+    if (names.length === 0) return '—';
+    return [...new Set(names)].join(', ');
+  };
+
   const searchReceipt = async () => {
     if (!receiptSearch.trim()) {
       alert('Please enter a receipt number');
@@ -417,6 +436,7 @@ export default function FeeReports() {
           'Date': transaction.transaction_date,
           'Student Name': student ? `${student.first_name} ${student.last_name}` : 'Unknown',
           'Class': student ? `${student.class}-${student.section}` : 'Unknown',
+          'Fee Description': getFeeDescription(transaction),
           'Payment Mode': transaction.payment_mode,
           'Total Amount': transaction.total_amount,
           'Discount': transaction.discount_amount || 0,
@@ -480,6 +500,7 @@ export default function FeeReports() {
                   <th>Date</th>
                   <th>Student</th>
                   <th>Class</th>
+                  <th>Fee Description</th>
                   <th>Mode</th>
                   <th>Amount</th>
                 </tr>
@@ -493,6 +514,7 @@ export default function FeeReports() {
                       <td>${format(new Date(transaction.transaction_date), 'dd/MM/yyyy')}</td>
                       <td>${student ? `${student.first_name} ${student.last_name}` : 'Unknown'}</td>
                       <td>${student ? `${student.class}-${student.section}` : 'Unknown'}</td>
+                      <td>${getFeeDescription(transaction)}</td>
                       <td>${transaction.payment_mode ? transaction.payment_mode.toUpperCase() : 'N/A'}</td>
                       <td>₹${transaction.net_amount}</td>
                     </tr>
@@ -858,6 +880,7 @@ export default function FeeReports() {
                       <TableHead>Date</TableHead>
                       <TableHead>Student</TableHead>
                       <TableHead>Class</TableHead>
+                      <TableHead>Fee Description</TableHead>
                       <TableHead>Payment Mode</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Discount</TableHead>
@@ -868,7 +891,7 @@ export default function FeeReports() {
                   <TableBody>
                     {filterTransactions().length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                           No transactions found for the selected filters
                         </TableCell>
                       </TableRow>
@@ -884,6 +907,9 @@ export default function FeeReports() {
                             </TableCell>
                             <TableCell>
                               {student ? `${student.class}-${student.section}` : 'Unknown'}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-600 max-w-xs">
+                              {getFeeDescription(transaction)}
                             </TableCell>
                             <TableCell className="font-medium">
                               {(transaction.payment_mode || 'N/A').toUpperCase()}
