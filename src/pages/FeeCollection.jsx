@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Search, Receipt, Calculator, CreditCard, Calendar } from 'lucide-react';
@@ -17,6 +18,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+// decimal columns arrive as strings; normalize before any arithmetic
+const toAmount = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+};
 
 export default function FeeCollection() {
   const [allStudents, setAllStudents] = useState([]);
@@ -38,6 +45,7 @@ export default function FeeCollection() {
     remarks: '',
     one_time_discount: 0,
     one_time_discount_reason: '',
+    late_fee_waiver: 100,
     manual_receipt_number: '',
     receipt_date: format(new Date(), 'yyyy-MM-dd')
   });
@@ -125,7 +133,11 @@ export default function FeeCollection() {
       const allDues = await fetchAllFiltered('FeeDue', { student_id: selectedStudent.id });
       // Show ALL dues including paid — sort by due_date ascending
       allDues.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-      setStudentDues(allDues);
+      setStudentDues(allDues.map(due => ({
+        ...due,
+        paid_amount: toAmount(due.paid_amount),
+        balance_amount: toAmount(due.balance_amount)
+      })));
     } catch (error) {
       console.error('Error loading student dues:', error);
       setStudentDues([]);
@@ -172,12 +184,25 @@ export default function FeeCollection() {
     setPartialAmounts(prev => ({ ...prev, [dueId]: clamped }));
   };
 
+  const getDuesWithLateFine = (dues, asOf) => dues.map(due => {
+    const fine = isDueSettled(due) ? 0 : calculateLateFine(due.due_date, asOf);
+    return { ...due, late_fine: fine };
+  });
+
   const calculateTotalAmount = () => {
-    const subtotal = selectedDues.reduce((sum, due) => sum + (partialAmounts[due.id] ?? due.balance_amount), 0);
+    const dues = getDuesWithLateFine(selectedDues, paymentData.receipt_date);
+    const subtotal = dues.reduce((sum, due) => sum + toAmount(partialAmounts[due.id] ?? due.balance_amount), 0);
     const permanentDiscount = calculatePermanentDiscount(subtotal);
     const oneTimeDiscount = parseFloat(paymentData.one_time_discount) || 0;
-    
-    return Math.max(0, subtotal - permanentDiscount - oneTimeDiscount);
+    const payableLateFine = calculatePayableLateFine(dues, paymentData.late_fee_waiver);
+
+    return Math.max(0, subtotal - permanentDiscount - oneTimeDiscount + payableLateFine);
+  };
+
+  const calculatePayableLateFine = (dues, waiverPercent) => {
+    const totalLateFine = dues.reduce((sum, due) => sum + toAmount(due.late_fine), 0);
+    const waiver = Math.min(100, Math.max(0, Number(waiverPercent) || 0));
+    return totalLateFine * (1 - waiver / 100);
   };
 
   const calculatePermanentDiscount = (amount) => {
@@ -186,9 +211,9 @@ export default function FeeCollection() {
     studentDiscounts.forEach(discount => {
       if (discount.discount_type === 'permanent' && discount.status === 'active') {
         if (discount.discount_mode === 'percentage') {
-          totalDiscount += (amount * discount.percentage) / 100;
+          totalDiscount += (amount * toAmount(discount.percentage)) / 100;
         } else {
-          totalDiscount += discount.fixed_amount;
+          totalDiscount += toAmount(discount.fixed_amount);
         }
       }
     });
@@ -196,7 +221,37 @@ export default function FeeCollection() {
     return totalDiscount;
   };
 
-  // calculateLateFine function removed
+  const LATE_FEE_STEP = 100;
+  const LATE_FEE_GRACE_DAY = 20;
+
+  // 'YYYY-MM-DD' is a calendar day, not an instant. Plain `new Date('2026-09-10')`
+  // is UTC midnight, which lands on the previous local day west of Greenwich and
+  // shifts both the grace cutoff and the month diff. Parse as local instead.
+  const parseLocalDay = (value) => {
+    if (!value) return null;
+    const head = String(value).slice(0, 10);
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(head);
+    if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  // Late fee: due date's own month is the anchor. Grace through the 20th of that
+  // month, then one ₹100 step for the 21st-to-end-of-month, then one more ₹100
+  // step on the 1st of every following month. Accrual stops when the due is paid.
+  const calculateLateFine = (dueDate, asOf) => {
+    const due = parseLocalDay(dueDate);
+    const on = parseLocalDay(asOf);
+    if (!due || !on) return 0;
+
+    const graceEnd = new Date(due.getFullYear(), due.getMonth(), LATE_FEE_GRACE_DAY, 23, 59, 59, 999);
+    if (on <= graceEnd) return 0;
+
+    const monthsLate = (on.getFullYear() - due.getFullYear()) * 12 + (on.getMonth() - due.getMonth());
+    return LATE_FEE_STEP * (1 + Math.max(0, monthsLate));
+  };
+
+  const isDueSettled = (due) => due.status === 'paid' || due.status === 'waived';
 
   const generateReceiptNumber = async () => {
     try {
@@ -251,10 +306,13 @@ export default function FeeCollection() {
         paying_now: partialAmounts[due.id] ?? due.balance_amount
       }));
 
-      const subtotal = duesWithPayment.reduce((sum, due) => sum + due.paying_now, 0);
+      const duesWithFine = getDuesWithLateFine(duesWithPayment, paymentData.receipt_date);
+      const subtotal = duesWithFine.reduce((sum, due) => sum + due.paying_now, 0);
       const permanentDiscount = calculatePermanentDiscount(subtotal);
       const oneTimeDiscount = parseFloat(paymentData.one_time_discount) || 0;
-      const totalAmount = calculateTotalAmount();
+      const totalLateFine = duesWithFine.reduce((sum, due) => sum + (due.late_fine || 0), 0);
+      const waivedLateFine = totalLateFine - calculatePayableLateFine(duesWithFine, paymentData.late_fee_waiver);
+      const totalAmount = Math.max(0, subtotal - permanentDiscount - oneTimeDiscount + (totalLateFine - waivedLateFine));
 
       const transaction = {
         student_id: selectedStudent.id,
@@ -263,18 +321,23 @@ export default function FeeCollection() {
         payment_mode: paymentData.payment_mode,
         total_amount: subtotal,
         discount_amount: permanentDiscount + oneTimeDiscount,
-        late_fine: 0,
+        late_fine: totalLateFine,
+        late_fine_waived: waivedLateFine,
         net_amount: totalAmount,
-        fee_details: JSON.stringify(duesWithPayment.map(due => ({
+        fee_details: JSON.stringify(duesWithFine.map(due => ({
           fee_head_name: due.fee_head_name || due.fee_type || 'Fee',
           amount: due.paying_now,
           due_date: due.due_date,
+          late_fine: due.late_fine || 0,
+          late_fine_waived: Math.round((due.late_fine || 0) * (waivedLateFine / (totalLateFine || 1)) * 100) / 100,
           is_partial: due.paying_now < due.balance_amount
         }))),
         payment_reference: paymentData.payment_reference,
         collected_by: 'current_user',
         remarks: paymentData.remarks,
-        academic_year: '2025-26',
+        academic_year: duesWithPayment.find(d => d.academic_year)?.academic_year
+          || selectedStudent?.academic_year
+          || '2025-26',
         status: 'completed'
       };
 
@@ -312,9 +375,10 @@ export default function FeeCollection() {
       const receiptData = {
         ...transaction,
         student: selectedStudent,
-        fees_paid: duesWithPayment,
+        fees_paid: duesWithFine,
         permanent_discount: permanentDiscount,
-        one_time_discount: oneTimeDiscount
+        one_time_discount: oneTimeDiscount,
+        waived_late_fine: waivedLateFine
       };
 
       setLastReceipt(receiptData);
@@ -326,6 +390,7 @@ export default function FeeCollection() {
         remarks: '',
         one_time_discount: 0,
         one_time_discount_reason: '',
+        late_fee_waiver: 100,
         manual_receipt_number: '',
         receipt_date: format(new Date(), 'yyyy-MM-dd')
       });
@@ -470,6 +535,8 @@ export default function FeeCollection() {
           <div class="total-section">
             <p><strong>Subtotal:</strong> ₹${lastReceipt.total_amount.toFixed(2)}</p>
             ${lastReceipt.discount_amount > 0 ? `<p><strong>Total Discount:</strong> -₹${lastReceipt.discount_amount.toFixed(2)}</p>` : ''}
+            ${lastReceipt.late_fine > 0 ? `<p><strong>Late Fee:</strong> ₹${lastReceipt.late_fine.toFixed(2)}</p>` : ''}
+            ${lastReceipt.waived_late_fine > 0 ? `<p><strong>Late Fee Waived:</strong> -₹${lastReceipt.waived_late_fine.toFixed(2)}</p>` : ''}
             <p style="font-size: 13px; font-weight: bold;"><strong>Total Amount Paid:</strong> ₹${lastReceipt.net_amount.toFixed(2)}</p>
           </div>
 
@@ -487,8 +554,16 @@ export default function FeeCollection() {
   const subtotal = selectedDues.reduce((sum, due) => sum + (partialAmounts[due.id] ?? due.balance_amount), 0);
   const permanentDiscount = calculatePermanentDiscount(subtotal);
   const oneTimeDiscount = parseFloat(paymentData.one_time_discount) || 0;
-  // Removed lateFine
+  const selectedDuesWithFine = getDuesWithLateFine(selectedDues, paymentData.receipt_date);
+  const totalLateFine = selectedDuesWithFine.reduce((sum, due) => sum + (due.late_fine || 0), 0);
+  const payableLateFine = calculatePayableLateFine(selectedDuesWithFine, paymentData.late_fee_waiver);
+  const waivedLateFine = totalLateFine - payableLateFine;
   const totalAmount = calculateTotalAmount();
+
+  const dueLateFines = {};
+  for (const due of getDuesWithLateFine(studentDues, paymentData.receipt_date)) {
+    dueLateFines[due.id] = due.late_fine;
+  }
 
   return (
     <div className="space-y-6">
@@ -716,6 +791,11 @@ export default function FeeCollection() {
                                 {!isPaid && !isPartial && isNotYetDue && (
                                   <Badge className="bg-blue-100 text-blue-800">Not Yet Due</Badge>
                                 )}
+                                {!isPaid && dueLateFines[due.id] > 0 && (
+                                  <div className="text-xs text-red-600 mt-1">
+                                    Late fee ₹{dueLateFines[due.id].toFixed(2)}
+                                  </div>
+                                )}
                               </TableCell>
                             </TableRow>
                           );
@@ -778,8 +858,40 @@ export default function FeeCollection() {
                     </div>
                   )}
                   
-                  {/* Late Fine section removed */}
-                  
+                  {totalLateFine > 0 && (
+                    <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-3">
+                      <div className="flex justify-between text-red-700">
+                        <span>Late Fee ({selectedDuesWithFine.filter(d => d.late_fine > 0).length} overdue):</span>
+                        <span>₹{totalLateFine.toFixed(2)}</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <Label htmlFor="late-fee-waiver">Waive Late Fee</Label>
+                          <span className="font-medium">{paymentData.late_fee_waiver}%</span>
+                        </div>
+                        <Slider
+                          id="late-fee-waiver"
+                          min={0}
+                          max={100}
+                          step={5}
+                          value={[paymentData.late_fee_waiver]}
+                          onValueChange={([value]) => setPaymentData(prev => ({ ...prev, late_fee_waiver: value }))}
+                        />
+                        <div className="flex justify-between text-sm text-green-700">
+                          <span>Payable late fee:</span>
+                          <span>₹{payableLateFine.toFixed(2)}</span>
+                        </div>
+                        {waivedLateFine > 0 && (
+                          <div className="flex justify-between text-sm text-purple-700">
+                            <span>Waived:</span>
+                            <span>-₹{waivedLateFine.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total Amount:</span>

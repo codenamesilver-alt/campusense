@@ -17,6 +17,12 @@ dist-ssr
 *.local
 uploads/
 
+# One-off maintenance scripts and their live-data snapshots.
+# Never commit: contains production Supabase student backups and
+# destructive delete-* scripts that must not run unattended.
+backend/scripts/
+
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
