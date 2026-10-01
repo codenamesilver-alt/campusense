@@ -4,7 +4,7 @@ import StudentDashboard from "@/components/dashboard/StudentDashboard";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
 
 import { Student } from "@/entities/Student";
-import { Staff } from "@/entities/Staff";
+import { User } from "@/entities/User";
 import { FeeTransaction } from "@/entities/FeeTransaction";
 import { Complaint } from "@/entities/Complaint";
 import { ApprovalRequest } from "@/entities/ApprovalRequest";
@@ -57,9 +57,9 @@ const AdminDashboard = () => {
         const monthStart = `${yyyy}-${mm}-01`;
         const monthEnd = `${yyyy}-${mm}-${String(new Date(yyyy, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
 
-        const [students, staff, allFeeTransactions, complaints, attendance, examSchedules, approvalRequests] = await Promise.all([
+        const [students, staffUsers, allFeeTransactions, complaints, attendance, examSchedules, approvalRequests] = await Promise.all([
           Student.list(),
-          Staff.list(),
+          User.list(),
           FeeTransaction.list('-transaction_date'),
           Complaint.filter({ status: 'open' }),
           Attendance.filter({ date: today }),
@@ -81,7 +81,7 @@ const AdminDashboard = () => {
 
         setStats({
           totalStudents,
-          totalStaff: staff.length,
+          totalStaff: staffUsers.length,
           todayFee,
           monthFee,
           openTickets: complaints.length,
