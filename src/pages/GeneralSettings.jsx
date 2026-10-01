@@ -8,6 +8,13 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Upload, Image as ImageIcon, Save, Plus, CheckCircle, Trash2 } from 'lucide-react';
 
+// Postgres date columns arrive as a plain string or a full ISO timestamp depending on
+// the driver. <input type="date"> only accepts the leading YYYY-MM-DD.
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  return String(value).slice(0, 10);
+};
+
 export default function GeneralSettings() {
   const [settings, setSettings] = useState({ 
     id: null, 
@@ -18,7 +25,8 @@ export default function GeneralSettings() {
     logo_url: '', 
     header_image_url: '', 
     current_session_id: '',
-    allow_backdated_receipt: false 
+    allow_backdated_receipt: false,
+    late_fee_effective_from: '2026-07-01'
   });
   const [sessions, setSessions] = useState([]);
   const [newSession, setNewSession] = useState({ name: '', start_date: '', end_date: '' });
@@ -46,7 +54,8 @@ export default function GeneralSettings() {
           logo_url: '', 
           header_image_url: '', 
           current_session_id: '',
-          allow_backdated_receipt: false 
+          allow_backdated_receipt: false,
+          late_fee_effective_from: '2026-07-01'
         });
       }
       const sessionData = await base44.entities.Session.list();
@@ -254,6 +263,30 @@ export default function GeneralSettings() {
         </CardContent>
       </Card>
       
+      {/* Late Fee Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Late Fee Settings</CardTitle>
+          <CardDescription>Choose the date from which fees may accrue late charges</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Label htmlFor="late_fee_effective_from" className="text-base font-medium">
+            Late fee effective from
+          </Label>
+          <p className="text-sm text-gray-500">
+            Dues dated before this day never accrue a late fee. Set this to the academic year
+            start to charge late fees all year.
+          </p>
+          <Input
+            id="late_fee_effective_from"
+            type="date"
+            className="max-w-xs"
+            value={toDateInputValue(settings.late_fee_effective_from)}
+            onChange={(e) => setSettings(prev => ({ ...prev, late_fee_effective_from: e.target.value }))}
+          />
+        </CardContent>
+      </Card>
+
       {/* Save Settings Button */}
       <div className="flex justify-end">
         <Button onClick={handleSaveSettings}><Save className="mr-2 h-4 w-4" /> Save All Settings</Button>

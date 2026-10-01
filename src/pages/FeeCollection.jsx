@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Search, Receipt, Calculator, CreditCard, Calendar } from 'lucide-react';
@@ -45,7 +44,7 @@ export default function FeeCollection() {
     remarks: '',
     one_time_discount: 0,
     one_time_discount_reason: '',
-    late_fee_waiver: 100,
+    late_fee_amount: null,
     manual_receipt_number: '',
     receipt_date: format(new Date(), 'yyyy-MM-dd')
   });
@@ -169,6 +168,9 @@ export default function FeeCollection() {
   };
 
   const handleDueSelection = (due, checked) => {
+    // Changing the fee selection changes what is eligible, so drop any manual
+    // late-fee figure and fall back to "charge the full eligible amount".
+    setPaymentData(prev => ({ ...prev, late_fee_amount: null }));
     if (checked) {
       setSelectedDues(prev => [...prev, due]);
       setPartialAmounts(prev => ({ ...prev, [due.id]: due.balance_amount }));
@@ -194,15 +196,22 @@ export default function FeeCollection() {
     const subtotal = dues.reduce((sum, due) => sum + toAmount(partialAmounts[due.id] ?? due.balance_amount), 0);
     const permanentDiscount = calculatePermanentDiscount(subtotal);
     const oneTimeDiscount = parseFloat(paymentData.one_time_discount) || 0;
-    const payableLateFine = calculatePayableLateFine(dues, paymentData.late_fee_waiver);
+    const payableLateFine = calculatePayableLateFine(dues, paymentData.late_fee_amount);
 
     return Math.max(0, subtotal - permanentDiscount - oneTimeDiscount + payableLateFine);
   };
 
-  const calculatePayableLateFine = (dues, waiverPercent) => {
+  // Late fee is an amount the office edits, not a percentage they slide. `null`
+  // means "not overridden" and charges the full eligible amount. Any typed value is
+  // clamped to 0..eligible, so 0 waives it fully and a lower figure waives the rest.
+  const calculatePayableLateFine = (dues, amountOverride) => {
     const totalLateFine = dues.reduce((sum, due) => sum + toAmount(due.late_fine), 0);
-    const waiver = Math.min(100, Math.max(0, Number(waiverPercent) || 0));
-    return totalLateFine * (1 - waiver / 100);
+    if (amountOverride === null || amountOverride === undefined || amountOverride === '') {
+      return totalLateFine;
+    }
+    const requested = Number(amountOverride);
+    if (!Number.isFinite(requested)) return totalLateFine;
+    return Math.min(totalLateFine, Math.max(0, requested));
   };
 
   const calculatePermanentDiscount = (amount) => {
@@ -223,6 +232,9 @@ export default function FeeCollection() {
 
   const LATE_FEE_STEP = 100;
   const LATE_FEE_GRACE_DAY = 20;
+  // Fallback only. The real value lives in school_settings.late_fee_effective_from
+  // so the school can move late fee to the academic-year start next session.
+  const DEFAULT_LATE_FEE_EFFECTIVE_FROM = '2026-07-01';
 
   // 'YYYY-MM-DD' is a calendar day, not an instant. Plain `new Date('2026-09-10')`
   // is UTC midnight, which lands on the previous local day west of Greenwich and
@@ -239,10 +251,16 @@ export default function FeeCollection() {
   // Late fee: due date's own month is the anchor. Grace through the 20th of that
   // month, then one ₹100 step for the 21st-to-end-of-month, then one more ₹100
   // step on the 1st of every following month. Accrual stops when the due is paid.
+  // Dues dated before the school's late-fee effective date never accrue at all.
   const calculateLateFine = (dueDate, asOf) => {
     const due = parseLocalDay(dueDate);
     const on = parseLocalDay(asOf);
     if (!due || !on) return 0;
+
+    const effectiveFrom = parseLocalDay(
+      schoolSettings?.late_fee_effective_from || DEFAULT_LATE_FEE_EFFECTIVE_FROM
+    );
+    if (effectiveFrom && due < effectiveFrom) return 0;
 
     const graceEnd = new Date(due.getFullYear(), due.getMonth(), LATE_FEE_GRACE_DAY, 23, 59, 59, 999);
     if (on <= graceEnd) return 0;
@@ -311,7 +329,7 @@ export default function FeeCollection() {
       const permanentDiscount = calculatePermanentDiscount(subtotal);
       const oneTimeDiscount = parseFloat(paymentData.one_time_discount) || 0;
       const totalLateFine = duesWithFine.reduce((sum, due) => sum + (due.late_fine || 0), 0);
-      const waivedLateFine = totalLateFine - calculatePayableLateFine(duesWithFine, paymentData.late_fee_waiver);
+      const waivedLateFine = totalLateFine - calculatePayableLateFine(duesWithFine, paymentData.late_fee_amount);
       const totalAmount = Math.max(0, subtotal - permanentDiscount - oneTimeDiscount + (totalLateFine - waivedLateFine));
 
       const transaction = {
@@ -390,7 +408,7 @@ export default function FeeCollection() {
         remarks: '',
         one_time_discount: 0,
         one_time_discount_reason: '',
-        late_fee_waiver: 100,
+        late_fee_amount: null,
         manual_receipt_number: '',
         receipt_date: format(new Date(), 'yyyy-MM-dd')
       });
@@ -556,7 +574,7 @@ export default function FeeCollection() {
   const oneTimeDiscount = parseFloat(paymentData.one_time_discount) || 0;
   const selectedDuesWithFine = getDuesWithLateFine(selectedDues, paymentData.receipt_date);
   const totalLateFine = selectedDuesWithFine.reduce((sum, due) => sum + (due.late_fine || 0), 0);
-  const payableLateFine = calculatePayableLateFine(selectedDuesWithFine, paymentData.late_fee_waiver);
+  const payableLateFine = calculatePayableLateFine(selectedDuesWithFine, paymentData.late_fee_amount);
   const waivedLateFine = totalLateFine - payableLateFine;
   const totalAmount = calculateTotalAmount();
 
@@ -866,18 +884,29 @@ export default function FeeCollection() {
                       </div>
 
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <Label htmlFor="late-fee-waiver">Waive Late Fee</Label>
-                          <span className="font-medium">{paymentData.late_fee_waiver}%</span>
-                        </div>
-                        <Slider
-                          id="late-fee-waiver"
-                          min={0}
-                          max={100}
-                          step={5}
-                          value={[paymentData.late_fee_waiver]}
-                          onValueChange={([value]) => setPaymentData(prev => ({ ...prev, late_fee_waiver: value }))}
+                        <Label htmlFor="late-fee-amount">Late fee charged</Label>
+                        <Input
+                          id="late-fee-amount"
+                          type="number"
+                          min="0"
+                          max={totalLateFine}
+                          step="0.01"
+                          value={paymentData.late_fee_amount ?? payableLateFine}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            late_fee_amount: e.target.value === '' ? '' : Number(e.target.value)
+                          }))}
+                          onBlur={() => setPaymentData(prev => ({
+                            ...prev,
+                            late_fee_amount: prev.late_fee_amount === null
+                              ? null
+                              : Math.min(totalLateFine, Math.max(0, Number(prev.late_fee_amount) || 0))
+                          }))}
+                          className="bg-white"
                         />
+                        <p className="text-xs text-gray-600">
+                          Eligible ₹{totalLateFine.toFixed(2)}. Edit to waive fully (0) or partially.
+                        </p>
                         <div className="flex justify-between text-sm text-green-700">
                           <span>Payable late fee:</span>
                           <span>₹{payableLateFine.toFixed(2)}</span>
